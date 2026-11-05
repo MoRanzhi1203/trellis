@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import cytoscape from 'cytoscape'
 import { api } from '../services/api'
@@ -68,8 +68,8 @@ function layoutPositions(nodes: GraphNode[], edges: GraphEdge[]) {
 
   const keys = [...unitGroups.keys()]
   const unitCols = Math.ceil(Math.sqrt(keys.length))
-  const UNIT_CELL = 760
-  const TREE_CELL = 400
+  const UNIT_CELL = 1100
+  const TREE_CELL = 430
   const positions: Record<string, { x: number; y: number }> = {}
 
   keys.forEach((key, unitIndex) => {
@@ -103,14 +103,14 @@ function layoutPositions(nodes: GraphNode[], edges: GraphEdge[]) {
           positions[String(branch.id)] = { x: bx, y: by }
           const words = childrenOf(branch.id)
           words.forEach((word) => assigned.add(word.id))
-          const spread = Math.min(1.6, 0.55 * Math.max(words.length, 1))
+          const spread = Math.min(2.4, 0.6 * Math.max(words.length, 1))
           words.forEach((word, wordIndex) => {
             const offset =
               words.length === 1 ? 0 : (wordIndex / (words.length - 1) - 0.5) * spread
             const wa = angle + offset
             positions[String(word.id)] = {
-              x: bx + Math.cos(wa) * 82,
-              y: by + Math.sin(wa) * 82,
+              x: bx + Math.cos(wa) * 100,
+              y: by + Math.sin(wa) * 100,
             }
           })
         })
@@ -119,8 +119,8 @@ function layoutPositions(nodes: GraphNode[], edges: GraphEdge[]) {
           const angle =
             (wordIndex / Math.max(directWords.length, 1)) * Math.PI * 2 - Math.PI / 2
           positions[String(word.id)] = {
-            x: tx + Math.cos(angle) * 88,
-            y: ty + Math.sin(angle) * 88,
+            x: tx + Math.cos(angle) * 100,
+            y: ty + Math.sin(angle) * 100,
           }
         })
       }
@@ -239,7 +239,7 @@ export default function Graph() {
               label: 'data(label)',
               'background-color': 'data(color)',
               color: '#1f2a24',
-              'font-size': 10,
+              'font-size': 11,
               'text-valign': 'bottom',
               'text-margin-y': 4,
               width: 14,
@@ -250,11 +250,11 @@ export default function Graph() {
           },
           {
             selector: 'node[type = "root"]',
-            style: { width: 34, height: 34, 'font-size': 14, 'font-weight': 700 },
+            style: { width: 34, height: 34, 'font-size': 15, 'font-weight': 700 },
           },
           {
             selector: 'node[type = "branch"]',
-            style: { width: 20, height: 20, 'font-size': 10 },
+            style: { width: 20, height: 20, 'font-size': 11 },
           },
           {
             selector: 'edge',
@@ -298,6 +298,15 @@ export default function Graph() {
           setSelected(null)
         }
       })
+      const syncLabels = () => {
+        const current = cyRef.current
+        if (!current) return
+        current
+          .nodes('[type="word"]')
+          .style('text-opacity', 1)
+      }
+      cyRef.current.on('zoom', syncLabels)
+      syncLabels()
     }
     const cy = cyRef.current
     cy.elements().remove()
