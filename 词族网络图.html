@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>词族网络图 · fin / volv</title>
+<style>
+  :root{
+    --bg:#070a0f;
+    --panel:rgba(14,20,28,.9);
+    --line:rgba(255,255,255,.09);
+    --text:#e6edf3;
+    --dim:#7d8b99;
+    --amber:#f5b544;
+    --cyan:#45c8e8;
+    --green:#4ade80;
+    --red:#ff7b72;
+    --violet:#b794f6;
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font)}
+  body{
+    background:
+      radial-gradient(900px 600px at 18% 10%, rgba(245,181,68,.055), transparent 62%),
+      radial-gradient(900px 600px at 84% 16%, rgba(69,200,232,.06), transparent 62%),
+      radial-gradient(800px 700px at 50% 100%, rgba(183,148,246,.05), transparent 60%),
+      var(--bg);
+  }
+  #app{position:fixed;inset:0;display:flex;flex-direction:column}
+
+  /* ---------- 顶栏 ---------- */
+  header{
+    height:62px;flex:0 0 62px;display:flex;align-items:center;gap:18px;
+    padding:0 20px;border-bottom:1px solid var(--line);
+    background:rgba(7,10,15,.72);backdrop-filter:blur(14px);z-index:30;
+  }
+  .brand{display:flex;align-items:center;gap:11px;min-width:210px}
+  .brand .orb{
+    width:26px;height:26px;border-radius:50%;flex:0 0 26px;
+    background:conic-gradient(from 210deg,#f5b544,#45c8e8,#4ade80,#ff7b72,#b794f6,#f5b544);
+    box-shadow:0 0 18px rgba(245,181,68,.35);filter:saturate(1.1);
+  }
+  .brand h1{font-size:14px;font-weight:650;letter-spacing:.4px}
+  .brand p{font-size:10.5px;color:var(--dim);letter-spacing:.3px;margin-top:2px}
+
+  .search{flex:1;max-width:340px;position:relative}
+  .search input{
+    width:100%;height:34px;border-radius:9px;border:1px solid var(--line);
+    background:rgba(255,255,255,.035);color:var(--text);
+    padding:0 12px 0 32px;font-size:12.5px;font-family:var(--font);outline:none;
+    transition:.18s;
+  }
+  .search input:focus{border-color:rgba(69,200,232,.45);background:rgba(69,200,232,.05)}
+  .search input::placeholder{color:#55626e}
+  .search svg{position:absolute;left:10px;top:9px;width:15px;height:15px;stroke:#55626e;fill:none;stroke-width:1.8}
+
+  .tools{display:flex;gap:7px;margin-left:auto}
+  .tools button{
+    height:32px;padding:0 13px;border-radius:8px;cursor:pointer;
+    border:1px solid var(--line);background:rgba(255,255,255,.03);
+    color:#aab6c2;font-size:12px;font-family:var(--font);transition:.16s;
+  }
+  .tools button:hover{background:rgba(255,255,255,.075);color:#fff}
+  .tools button.on{
+    background:rgba(69,200,232,.14);border-color:rgba(69,200,232,.5);color:#9ee6f7;
+  }
+
+  /* ---------- 画布 ---------- */
+  #stage{flex:1;position:relative;overflow:hidden}
+  canvas{display:block;width:100%;height:100%;cursor:grab}
+  canvas.dragging{cursor:grabbing}
+
+  /* ---------- 图例 ---------- */
+  #legend{
+    position:absolute;left:18px;bottom:18px;z-index:20;
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:11px 14px;backdrop-filter:blur(12px);
+    display:flex;flex-direction:column;gap:7px;
+    box-shadow:0 8px 28px rgba(0,0,0,.45);
+  }
+  #legend .row{display:flex;align-items:center;gap:8px;font-size:11.5px;color:#9aa7b4;cursor:pointer;transition:.15s}
+  #legend .row:hover{color:#fff}
+  #legend .row.off{opacity:.32}
+  #legend .sw{width:9px;height:9px;border-radius:50%;flex:0 0 9px;box-shadow:0 0 9px currentColor}
+  #legend .nm{font-weight:600;letter-spacing:.3px}
+
+  #hint{
+    position:absolute;right:18px;bottom:18px;z-index:20;font-size:11px;color:#4e5b68;
+    background:var(--panel);border:1px solid var(--line);border-radius:9px;
+    padding:7px 12px;backdrop-filter:blur(10px);letter-spacing:.2px;
+  }
+
+  /* ---------- 详情面板 ---------- */
+  #panel{
+    position:absolute;top:78px;right:16px;width:372px;z-index:25;
+    max-height:calc(100% - 96px);
+    background:var(--panel);border:1px solid var(--line);border-radius:16px;
+    backdrop-filter:blur(18px);box-shadow:0 18px 60px rgba(0,0,0,.6);
+    padding:20px 20px 24px;overflow-y:auto;
+    transform:translateX(24px);opacity:0;pointer-events:none;transition:.24s cubic-bezier(.4,0,.2,1);
+  }
+  #panel.show{transform:none;opacity:1;pointer-events:auto}
+  #panel::-webkit-scrollbar{width:6px}
+  #panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:3px}
+
+  .p-close{
+    position:absolute;top:14px;right:14px;width:26px;height:26px;border-radius:7px;
+    border:1px solid var(--line);background:rgba(255,255,255,.03);cursor:pointer;
+    color:#8b98a5;font-size:14px;line-height:1;display:grid;place-items:center;transition:.15s;
+  }
+  .p-close:hover{background:rgba(255,255,255,.09);color:#fff}
+
+  .p-kicker{
+    font-size:10px;letter-spacing:1.6px;text-transform:uppercase;font-weight:700;
+    margin-bottom:7px;
+  }
+  .p-word{font-size:27px;font-weight:700;letter-spacing:-.4px;line-height:1.15}
+  .p-ipa{font-size:13px;color:var(--dim);margin-top:5px;letter-spacing:.4px}
+  .p-ipa .pos{
+    display:inline-block;font-size:10.5px;padding:2px 7px;border-radius:5px;
+    background:rgba(255,255,255,.07);margin-right:8px;vertical-align:1px;color:#a9b6c3;
+  }
+  .p-gloss{font-size:14px;color:#cfd9e3;margin-top:12px;line-height:1.6}
+
+  .sec{margin-top:20px}
+  .sec-h{
+    font-size:10px;letter-spacing:1.5px;color:#63707d;font-weight:700;
+    margin-bottom:9px;display:flex;align-items:center;gap:7px;
+  }
+  .sec-h::after{content:"";flex:1;height:1px;background:var(--line)}
+  .sec ul{list-style:none;display:flex;flex-direction:column;gap:6px}
+  .sec li{font-size:12.5px;line-height:1.6;color:#b9c5d0;padding-left:13px;position:relative}
+  .sec li::before{
+    content:"";position:absolute;left:0;top:8px;width:4px;height:4px;
+    border-radius:50%;background:currentColor;opacity:.5;
+  }
+  .formula{
+    font-size:12.5px;line-height:1.7;color:#d5dee7;
+    background:rgba(255,255,255,.04);border:1px solid var(--line);
+    border-radius:9px;padding:10px 12px;
+  }
+  .formula b{color:#fff;font-weight:650}
+  .chiprow{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{
+    font-size:11.5px;padding:4px 9px;border-radius:6px;
+    background:rgba(255,255,255,.05);border:1px solid var(--line);
+    color:#aebbc7;line-height:1.5;
+  }
+  .ex{
+    font-size:12.5px;line-height:1.75;color:#c3cfda;
+    border-left:2px solid rgba(245,181,68,.5);padding-left:11px;
+  }
+  .ex em{font-style:normal;color:var(--amber);font-weight:600}
+  .hook{
+    font-size:12.5px;line-height:1.7;color:#f0d9a8;
+    background:rgba(245,181,68,.075);border:1px solid rgba(245,181,68,.22);
+    border-radius:9px;padding:10px 12px;
+  }
+  .hook b{color:#ffd48a}
+  .pathvis{
+    display:flex;align-items:center;flex-wrap:wrap;gap:5px;
+    font-size:11.5px;color:#7d8b99;margin-top:9px;
+  }
+  .pathvis .pn{
+    padding:2.5px 8px;border-radius:5px;background:rgba(255,255,255,.055);
+    color:#b9c5d0;border:1px solid var(--line);
+  }
+  .pathvis .ar{color:#404d5a;font-size:10px}
+
+  /* ---------- 提示条 ---------- */
+  #toast{
+    position:absolute;left:50%;top:78px;transform:translate(-50%,-10px);
+    background:rgba(69,200,232,.13);border:1px solid rgba(69,200,232,.4);
+    color:#9ee6f7;font-size:12px;padding:8px 16px;border-radius:9px;
+    opacity:0;pointer-events:none;transition:.22s;z-index:40;backdrop-filter:blur(8px);
+  }
+  #toast.show{opacity:1;transform:translate(-50%,0)}
+
+  @media (max-width:760px){
+    header{height:auto;flex-wrap:wrap;padding:10px 14px;gap:9px}
+    .brand{min-width:0;flex:1}
+    .brand p{display:none}
+    .search{order:3;flex:1 1 100%;max-width:none}
+    .tools button{padding:0 9px;font-size:11px}
+    #panel{left:10px;right:10px;top:auto;bottom:10px;height:56%;width:auto}
+    #legend{display:none}
+    #hint{display:none}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="brand">
+      <div class="orb"></div>
+      <div>
+        <h1>词族网络图</h1>
+        <p>fin · volv · ergon · fallere · miht&nbsp;&nbsp;|&nbsp;&nbsp;20 词</p>
+      </div>
+    </div>
+    <div class="search">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input id="q" placeholder="搜索单词 / 词根…">
+    </div>
+    <div class="tools">
+      <button id="mExplore" class="on">图谱</button>
+      <button id="mQuiz">自测</button>
+      <button id="mRandom">随机考</button>
+      <button id="btnReset">复位</button>
+    </div>
+  </header>
+
+  <main id="stage">
+    <canvas id="graph"></canvas>
+  </main>
+
+  <aside id="panel"></aside>
+
+  <div id="legend"></div>
+  <div id="hint">拖拽节点 · 滚轮缩放 · 点击看详情 · 右键拖背景平移</div>
+  <div id="toast"></div>
+</div>
+
+<script>
+"use strict";
+
+/* =========================================================
+   1. 数据层
+   ========================================================= */
+
+const FAM = {
+  fin:    {name:"fin",    color:"#f5b544", gloss:"边界 · 终点 · 极限", src:"拉丁 finis"},
+  volv:   {name:"volv",   color:"#45c8e8", gloss:"卷 · 滚 · 转",       src:"拉丁 volvere"},
+  ergon:  {name:"ergon",  color:"#4ade80", gloss:"工作 · 功",          src:"希腊 ergon"},
+  fallere:{name:"fallere",color:"#ff7b72", gloss:"欺骗 · 失误",        src:"拉丁 fallere"},
+  miht:   {name:"miht",   color:"#b794f6", gloss:"能力",               src:"古英语 miht"}
+};
+
+const NODES = [
+  /* ---------- 词根 ---------- */
+  {id:"root-fin", type:"root", fam:"fin", label:"fin", sub:"边界/终点/极限",
+   info:"拉丁 <b>finis</b> = 边界、终点、限制。<br>同一个词根分出三条支流：<br>· 边界 → define / confine<br>· 终点 → finish<br>· 极限 → refine<br>同根扩展：final, finite, infinite, finance。"},
+  {id:"root-volv", type:"root", fam:"volv", label:"volv", sub:"卷/转",
+   info:"拉丁 <b>volvere</b> = 卷、滚、转（过去分词 volutus）。<br>前缀直接决定方向：<br>· in- 往里卷 → involve<br>· re- 转回 → revolve<br>· e- 往外展 → evolve"},
+  {id:"root-ergon", type:"root", fam:"ergon", label:"ergon", sub:"工作/功",
+   info:"希腊 <b>ergon</b> = 工作、功。<br>en-（在内）+ ergon → 内在的做功能力。<br>同根：synergy（协同）、allergy（过敏）、energetics。"},
+  {id:"root-fallere", type:"root", fam:"fallere", label:"fallere", sub:"欺骗/失误",
+   info:"拉丁 <b>fallere</b> = 欺骗、使失望。<br>经古法语 faillir 进入英语 → fail。<br>同根：false, fault, fallible, default。"},
+  {id:"root-miht", type:"root", fam:"miht", label:"miht", sub:"能力",
+   info:"古英语 <b>miht</b> = 能力，与 may 同源。<br>一个源头长出两个身份：<br>· 情态动词 might = 可能<br>· 名词 might = 力量"},
+
+  /* ---------- 语义分支 ---------- */
+  {id:"b-bound", type:"branch", fam:"fin", label:"边界", parent:"root-fin",
+   info:"义支「边界」：把范围圈起来 → 划界、界定、围住。"},
+  {id:"b-end", type:"branch", fam:"fin", label:"终点", parent:"root-fin",
+   info:"义支「终点」：走到尽头 → 完成、结束。"},
+  {id:"b-limit", type:"branch", fam:"fin", label:"极限", parent:"root-fin",
+   info:"义支「极限」：做到极致 → 精细、提炼。<br>这就是 define 与 refine 同根却不同义的原因。"},
+  {id:"b-in", type:"branch", fam:"volv", label:"内卷", parent:"root-volv",
+   info:"义支「向内卷」：卷进去 → 卷入、牵涉、包含。"},
+  {id:"b-re", type:"branch", fam:"volv", label:"回转", parent:"root-volv",
+   info:"义支「转回」：绕圈 → 旋转、公转 → 革命。"},
+  {id:"b-out", type:"branch", fam:"volv", label:"外展", parent:"root-volv",
+   info:"义支「向外展」：展开卷轴 → 渐变、演变、进化。"},
+  {id:"b-work", type:"branch", fam:"ergon", label:"做功", parent:"root-ergon",
+   info:"义支「做功」：内在的能量 → 精力、能量、能源。"},
+  {id:"b-miss", type:"branch", fam:"fallere", label:"失误", parent:"root-fallere",
+   info:"义支「失误」：没做到 → 失败、未能、故障。"},
+  {id:"b-able", type:"branch", fam:"miht", label:"能力", parent:"root-miht",
+   info:"义支「能力」：有可能 → 可能；有力量 → 威力。"},
+
+  /* ---------- 单词 · fin ---------- */
+  {id:"define", type:"word", fam:"fin", label:"define", level:"一级主词", ipa:"/dɪˈfaɪn/", pos:"v.",
+   gloss:"给…下定义；明确界定",
+   senses:["给…下定义、解释（词、概念）","明确界定、确定（范围、性质、职责）"],
+   formula:"<b>de-</b>（彻底）+ <b>fin</b>（边界）→ 彻底把边界划出来",
+   coll:["define sth as sth","clearly define","define the role"],
+   ex:"The treaty <em>defined</em> the border between the two countries.",
+   hook:"划到边界，就叫「界定」。先有边界，才有定义。"},
+  {id:"redefine", type:"word", fam:"fin", label:"redefine", level:"派生", ipa:"/ˌriːdɪˈfaɪn/", pos:"v.",
+   gloss:"重新定义；使重新考虑",
+   senses:["重新定义","使重新考虑、重新审视"],
+   formula:"<b>re-</b>（重新）+ define → 重划一次界",
+   coll:["redefine the way / role"],
+   ex:"The internet has <em>redefined</em> the way we work.",
+   hook:"认识 define 就零成本，re- 只是「再来一次」。"},
+  {id:"definition", type:"word", fam:"fin", label:"definition", level:"派生", ipa:"/ˌdefɪˈnɪʃn/", pos:"n.",
+   gloss:"定义；释义；清晰度",
+   senses:["定义、释义","（图像的）清晰度"],
+   formula:"definit-（过去分词词干）+ <b>-ion</b>",
+   coll:["by definition 从定义上说","high definition 高清晰度"],
+   ex:"<em>By definition</em>, a mammal feeds its young on milk.",
+   hook:"重音后移一格：deFINE → defiNI-tion。"},
+  {id:"confine", type:"word", fam:"fin", label:"confine", level:"一级主词", ipa:"/kənˈfaɪn/", pos:"v.",
+   gloss:"限制，使局限；关押，监禁",
+   senses:["限制、使局限（be confined to）","关押、监禁","n.[pl.] confines 范围、界限"],
+   formula:"<b>con-</b>（完全、共同）+ <b>fin</b>（边界）→ 四周全围起来",
+   coll:["be confined to","confine oneself to","the confines of the law"],
+   ex:"Please <em>confine</em> your remarks to the main issue.",
+   hook:"发音陷阱：动词 conFINE，名词只以复数 CONfines 出现。"},
+  {id:"confined", type:"word", fam:"fin", label:"confined", level:"派生", ipa:"/kənˈfaɪnd/", pos:"adj.",
+   gloss:"被限制的；局限的；狭小的",
+   senses:["被限制的、局限的","（空间）狭小的、密闭的"],
+   formula:"confine + <b>-ed</b>",
+   coll:["confined space 密闭空间","be confined to"],
+   ex:"Learning is not <em>confined to</em> the classroom.",
+   hook:"confined 是被外部限制；自己克制才是 restrained。"},
+  {id:"refine", type:"word", fam:"fin", label:"refine", level:"一级主词", ipa:"/rɪˈfaɪn/", pos:"v.",
+   gloss:"精制，提炼；改进，完善",
+   senses:["精制、提炼（物质）","改进、完善（方法、技术、理论）","使有教养（refined manners）"],
+   formula:"<b>re-</b>（反复）+ <b>fine</b>（精细）→ 反复加工到极致",
+   coll:["refine sugar / oil","refine one's technique","refined 精炼的；有教养的"],
+   ex:"We <em>refined</em> the model after testing it on real data.",
+   hook:"re + fine = 再细一点，精上加精。"},
+  {id:"finish", type:"word", fam:"fin", label:"finish", level:"一级主词", ipa:"/ˈfɪnɪʃ/", pos:"v. & n.",
+   gloss:"完成；结束；最后阶段",
+   senses:["v. 完成、结束","n. 结束、最后阶段、表面涂层"],
+   formula:"<b>fin</b>（终点）+ <b>-ish</b> → 走到终点",
+   coll:["finish doing sth","from start to finish","a photo finish"],
+   ex:"Have you <em>finished</em> reading the report?",
+   hook:"是 finish doing，不是 finish to do。"},
+
+  /* ---------- 单词 · volv ---------- */
+  {id:"involve", type:"word", fam:"volv", label:"involve", level:"一级主词", ipa:"/ɪnˈvɒlv/", pos:"v.",
+   gloss:"参与；牵涉；包含，需要",
+   senses:["使参与、使卷入（involve sb in sth）","牵涉、连累","包含、含有；需要（必然伴随）"],
+   formula:"<b>in-</b>（向内）+ <b>volve</b>（卷）→ 把人或事卷进去",
+   coll:["be / get involved in","involve sb in sth","the job involves..."],
+   ex:"The job <em>involves</em> a lot of travel.",
+   hook:"「包含」= 必然把…卷进来，不是「里面有」。"},
+  {id:"involved", type:"word", fam:"volv", label:"involved", level:"派生", ipa:"/ɪnˈvɒlvd/", pos:"adj.",
+   gloss:"有关的；复杂的，棘手的",
+   senses:["有关的、涉及的","复杂的、棘手的"],
+   formula:"involve + <b>-ed</b>",
+   coll:["the people involved","be involved in","an involved plot"],
+   ex:"The plot is so <em>involved</em> that I lost track.",
+   hook:"人被卷进去 = 有关；事情卷成一团 = 复杂。"},
+  {id:"involvement", type:"word", fam:"volv", label:"involvement", level:"派生", ipa:"/ɪnˈvɒlvmənt/", pos:"n.",
+   gloss:"参与；牵连；感情投入",
+   senses:["参与、介入","牵连","感情投入（易漏）"],
+   formula:"involve + <b>-ment</b>",
+   coll:["involvement in sth","emotional involvement"],
+   ex:"The report questions his <em>involvement in</em> the scandal.",
+   hook:"别漏「感情投入」这一义。"},
+  {id:"revolve", type:"word", fam:"volv", label:"revolve", level:"一级主词", ipa:"/rɪˈvɒlv/", pos:"v.",
+   gloss:"旋转；以…为中心",
+   senses:["旋转；（天体）公转","revolve around 以…为中心、围绕…转"],
+   formula:"<b>re-</b>（回转）+ <b>volve</b>（转）→ 转回去",
+   coll:["revolve around"],
+   ex:"The earth <em>revolves around</em> the sun.",
+   hook:"绕外部中心 = 公转；绕自身轴 = rotate。"},
+  {id:"revolution", type:"word", fam:"volv", label:"revolution", level:"半主词", ipa:"/ˌrevəˈluːʃn/", pos:"n.",
+   gloss:"旋转，公转；革命；巨变",
+   senses:["旋转；公转、运行一周（原义）","革命；巨变","（方法上的）彻底变革"],
+   formula:"revolut-（过去分词词干）+ <b>-ion</b>",
+   coll:["the Industrial Revolution","a revolution in sth"],
+   ex:"The internet has brought about a <em>revolution in</em> communication.",
+   hook:"先有天体「旋转」，才有政权「轮转」的「革命」。"},
+  {id:"revolutionary", type:"word", fam:"volv", label:"revolutionary", level:"派生", ipa:"/ˌrevəˈluːʃənəri/", pos:"adj. & n.",
+   gloss:"革命性的；突破性的",
+   senses:["adj. 革命的；突破性的、完全创新的","n. 革命者"],
+   formula:"revolution + <b>-ary</b>",
+   coll:["revolutionary ideas","a revolutionary new drug"],
+   ex:"The company introduced a <em>revolutionary</em> new design.",
+   hook:"阅读里「突破性的」比「革命的」更常见。"},
+  {id:"evolve", type:"word", fam:"volv", label:"evolve", level:"一级主词", ipa:"/ɪˈvɒlv/", pos:"v.",
+   gloss:"逐渐发展；演变；进化",
+   senses:["（生物）进化","逐渐发展、演变（from / into）","（及物）逐步形成"],
+   formula:"<b>e-/ex-</b>（向外）+ <b>volve</b>（卷）→ 把卷轴展开",
+   coll:["evolve from","evolve into","slowly evolve"],
+   ex:"The small firm has <em>evolved into</em> a global company.",
+   hook:"核心是「慢慢展开」：渐进、自然、连续，不能表突变。"},
+  {id:"evolution", type:"word", fam:"volv", label:"evolution", level:"派生", ipa:"/ˌiːvəˈluːʃn/", pos:"n.",
+   gloss:"演变，演化；进化（论）",
+   senses:["演变、演化","进化、进化论"],
+   formula:"evolut-（过去分词词干）+ <b>-ion</b>",
+   coll:["the theory of evolution","the evolution of language"],
+   ex:"The book traces the <em>evolution of</em> modern cities.",
+   hook:"evolve → evoluTION，注意是 evolut- 不是 evolv-。"},
+
+  /* ---------- 单词 · 其他 ---------- */
+  {id:"energy", type:"word", fam:"ergon", label:"energy", level:"一级主词", ipa:"/ˈenədʒi/", pos:"n.",
+   gloss:"能量；精力；能源",
+   senses:["能量（物理）","精力、活力","能源"],
+   formula:"<b>en-</b>（在内）+ <b>ergon</b>（功）→ 内在的做功能力",
+   coll:["solar / nuclear energy","full of energy","devote one's energies to"],
+   ex:"She is always <em>full of energy</em> in the morning.",
+   hook:"希腊 ergon 同根：synergy、allergy。"},
+  {id:"energetic", type:"word", fam:"ergon", label:"energetic", level:"派生", ipa:"/ˌenəˈdʒetɪk/", pos:"adj.",
+   gloss:"精力充沛的；有力的",
+   senses:["精力充沛的、充满活力的","有力的、积极的（措施、行动）"],
+   formula:"energ- + <b>-etic</b>（不是 -ic）",
+   coll:["energetic measures","an energetic campaign"],
+   ex:"The government took <em>energetic</em> steps to control inflation.",
+   hook:"拼写去 y 加 etic；它 ≠「能量的」。"},
+  {id:"fail", type:"word", fam:"fallere", label:"fail", level:"一级主词", ipa:"/feɪl/", pos:"v.",
+   gloss:"失败；未能；衰退；失灵",
+   senses:["失败","未能（做到）：fail to do sth","不及格：fail the exam","衰退、减弱","失灵、故障"],
+   formula:"拉丁 <b>fallere</b>（欺骗、使失望）",
+   coll:["fail to do sth","fail in sth","without fail","words fail me"],
+   ex:"He <em>failed to</em> answer the question.",
+   hook:"fail 不及物，无被动；同根 false / fault / default。"},
+  {id:"failure", type:"word", fam:"fallere", label:"failure", level:"半主词", ipa:"/ˈfeɪljə(r)/", pos:"n.",
+   gloss:"失败；失败者；故障；未能",
+   senses:["失败","不及格","失败的人（或事）","故障、失灵","没做到（failure to do）"],
+   formula:"fail + <b>-ure</b>（不是 -er）",
+   coll:["failure to do sth","power / heart failure","end in failure"],
+   ex:"The accident was caused by engine <em>failure</em>.",
+   hook:"「故障」义没有动词对应，只能整体记。"},
+  {id:"might", type:"word", fam:"miht", label:"might", level:"半主词", ipa:"/maɪt/", pos:"modal v. & n.",
+   gloss:"可能（情态）；力量（名词）",
+   senses:["情态：may 的过去式，表可能、委婉","might have done 对过去的推测","n. 力量、威力"],
+   formula:"一词两身份，都源自「能」",
+   coll:["might have done","with all one's might","might and main"],
+   ex:"He pushed the door <em>with all his might</em>.",
+   hook:"一个说「可能」，一个说「强力」，源头都是「能」。"}
+];
+
+const EDGES = [
+  /* 词根 → 义支 */
+  {s:"root-fin", t:"b-bound"}, {s:"root-fin", t:"b-end"}, {s:"root-fin", t:"b-limit"},
+  {s:"root-volv", t:"b-in"}, {s:"root-volv", t:"b-re"}, {s:"root-volv", t:"b-out"},
+  {s:"root-ergon", t:"b-work"}, {s:"root-fallere", t:"b-miss"}, {s:"root-miht", t:"b-able"},
+  /* 义支 → 单词 */
+  {s:"b-bound", t:"define", p:"de-"}, {s:"b-bound", t:"confine", p:"con-"},
+  {s:"b-end", t:"finish", p:"—"}, {s:"b-limit", t:"refine", p:"re-"},
+  {s:"b-in", t:"involve", p:"in-"}, {s:"b-re", t:"revolve", p:"re-"},
+  {s:"b-out", t:"evolve", p:"e-"}, {s:"b-work", t:"energy", p:"en-"},
+  {s:"b-miss", t:"fail", p:"—"}, {s:"b-able", t:"might", p:"—"},
+  /* 单词 → 派生词 */
+  {s:"define", t:"redefine", d:"re-"}, {s:"define", t:"definition", d:"-ion"},
+  {s:"confine", t:"confined", d:"-ed"},
+  {s:"involve", t:"involved", d:"-ed"}, {s:"involve", t:"involvement", d:"-ment"},
+  {s:"revolve", t:"revolution", d:"-ion"}, {s:"revolution", t:"revolutionary", d:"-ary"},
+  {s:"evolve", t:"evolution", d:"-ion"},
+  {s:"energy", t:"energetic", d:"-etic"},
+  {s:"fail", t:"failure", d:"-ure"}
+];
+
+/* =========================================================
+   2. 索引
+   ========================================================= */
+const byId = new Map(NODES.map(n => [n.id, n]));
+const adj  = new Map(NODES.map(n => [n.id, []]));
+EDGES.forEach(e => {
+  adj.get(e.s).push({id:e.t, e});
+  adj.get(e.t).push({id:e.s, e});
+});
+
+/* =========================================================
+   3. 物理布局
+   ========================================================= */
+const NODE_R = {root:36, branch:22, word:7};
+const P = {rep:13500, k:0.062, grav:0.002, damp:0.9, minGap:20};
+
+/* 固定种子：每次打开布局一致，便于形成空间记忆 */
+let seed = 20241105;
+function rnd(){ seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; }
+
+/* 全局温度：布局收敛后自动静止，拖拽时重新升温 */
+let alpha = 1;
+
+/* 族锚点：每个词族占据一个固定区域，避免小族被挤进中心 */
+const ANCHOR = {
+  fin:[-320,-105], volv:[320,-105], ergon:[-320,105],
+  fallere:[275,140], miht:[5,275]
+};
+
+const nodes = NODES.map(n => {
+  const c = ANCHOR[n.fam] || [0,0];
+  const jitter = n.type === "root" ? 0 : (n.type === "branch" ? 60 : 110);
+  return {
+    ...n,
+    x: c[0] + (rnd()-0.5)*jitter,
+    y: c[1] + (rnd()-0.5)*jitter,
+    vx: 0, vy: 0,
+    r: NODE_R[n.type],
+    fixed: false
+  };
+});
+const nmap = new Map(nodes.map(n => [n.id, n]));
+
+const edges = EDGES.map(e => {
+  const a = nmap.get(e.s), b = nmap.get(e.t);
+  const L = e.d ? 78 : (a.type === "root" ? 108 : 98);
+  return {...e, a, b, L};
+});
+
+function physics(decay) {
+  const a = alpha;
+  const n = nodes.length;
+  // 斥力
+  for (let i = 0; i < n; i++) {
+    for (let j = i+1; j < n; j++) {
+      const A = nodes[i], B = nodes[j];
+      let dx = B.x - A.x, dy = B.y - A.y;
+      let d2 = dx*dx + dy*dy;
+      if (d2 < 1e-4) { dx = rnd()-0.5; dy = rnd()-0.5; d2 = 1; }
+      const d = Math.sqrt(d2);
+      const f = P.rep / d2 * a;
+      const ux = dx/d, uy = dy/d;
+      A.vx -= ux*f; A.vy -= uy*f;
+      B.vx += ux*f; B.vy += uy*f;
+    }
+  }
+  // 弹簧
+  for (const e of edges) {
+    const dx = e.b.x - e.a.x, dy = e.b.y - e.a.y;
+    const d = Math.hypot(dx, dy) || 1;
+    const f = P.k * (d - e.L) * a;
+    const ux = dx/d, uy = dy/d;
+    e.a.vx += ux*f; e.a.vy += uy*f;
+    e.b.vx -= ux*f; e.b.vy -= uy*f;
+  }
+  // 族锚点引力 + 弱向心
+  for (const nd of nodes) {
+    const an = ANCHOR[nd.fam] || [0,0];
+    const fg = (nd.type === "root" ? 0.013 : 0.0062) * a;
+    nd.vx += (an[0] - nd.x) * fg;
+    nd.vy += (an[1] - nd.y) * fg;
+    nd.vx -= nd.x * P.grav * a;
+    nd.vy -= nd.y * P.grav * a;
+  }
+  // 碰撞 + 积分
+  for (const nd of nodes) {
+    if (nd.fixed) { nd.vx = 0; nd.vy = 0; continue; }
+    nd.vx *= P.damp; nd.vy *= P.damp;
+    const sp = Math.hypot(nd.vx, nd.vy);
+    if (sp > 14) { nd.vx = nd.vx/sp*14; nd.vy = nd.vy/sp*14; }
+    nd.x += nd.vx; nd.y += nd.vy;
+  }
+  // 分离，避免重叠（权重随温度降低）
+  for (let i = 0; i < n; i++) {
+    for (let j = i+1; j < n; j++) {
+      const A = nodes[i], B = nodes[j];
+      const dx = B.x - A.x, dy = B.y - A.y;
+      const d = Math.hypot(dx, dy) || 0.01;
+      const need = A.r + B.r + P.minGap
+        + (A.type === "root" ? 20 : 0) + (B.type === "root" ? 20 : 0)
+        + (A.type === "word" ? 14 : 0) + (B.type === "word" ? 14 : 0);
+      if (d < need) {
+        const push = (need - d) / d * 0.5 * Math.min(1, a + 0.15);
+        A.x -= dx*push; A.y -= dy*push;
+        B.x += dx*push; B.y += dy*push;
+      }
+    }
+  }
+  if (decay) alpha *= 0.972;
+}
+
+/* =========================================================
+   4. 渲染
+   ========================================================= */
+const canvas = document.getElementById("graph");
+const ctx = canvas.getContext("2d");
+const stage = document.getElementById("stage");
+
+let W = 0, H = 0, DPR = 1;
+const view = {x:0, y:0, s:0.82};
+
+function resize() {
+  const r = stage.getBoundingClientRect();
+  W = Math.max(1, r.width); H = Math.max(1, r.height);
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = Math.round(W*DPR);
+  canvas.height = Math.round(H*DPR);
+  canvas.style.width = W+"px";
+  canvas.style.height = H+"px";
+}
+new ResizeObserver(resize).observe(stage);
+
+function fitView() {
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (const n of nodes) {
+    x0 = Math.min(x0, n.x - n.r - 60); x1 = Math.max(x1, n.x + n.r + 120);
+    y0 = Math.min(y0, n.y - n.r - 40); y1 = Math.max(y1, n.y + n.r + 40);
+  }
+  const pad = 28;
+  const sw = (W - pad*2) / (x1 - x0);
+  const sh = (H - pad*2) / (y1 - y0);
+  view.s = Math.min(sw, sh, 1.25);
+  view.x = W/2 - ((x0+x1)/2) * view.s;
+  view.y = H/2 - ((y0+y1)/2) * view.s;
+}
+
+/* ---- 状态 ---- */
+const state = {
+  hover:null, selected:null, quiz:false,
+  revealed:new Set(), query:"", matched:null, offFam:new Set(),
+  mode:"explore"
+};
+
+function isDim(id) {
+  const nd = nmap.get(id);
+  if (!nd) return true;
+  if (state.offFam.has(nd.fam)) return true;
+  return false;
+}
+
+function pathToRoot(id) {
+  const prev = new Map(), q = [id], seen = new Set([id]);
+  let hit = null;
+  while (q.length) {
+    const cur = q.shift();
+    const nd = nmap.get(cur);
+    if (nd.type === "root") { hit = cur; break; }
+    for (const nb of adj.get(cur)) {
+      if (!seen.has(nb.id)) { seen.add(nb.id); prev.set(nb.id, cur); q.push(nb.id); }
+    }
+  }
+  if (!hit) return new Set();
+  const path = new Set();
+  let c = hit;
+  while (c !== undefined) { path.add(c); c = prev.get(c); }
+  return path;
+}
+
+let hlNodes = null, hlEdges = null;
+
+function computeHighlight() {
+  let anchor = null;
+  if (state.selected) anchor = state.selected;
+  else if (state.hover) anchor = state.hover;
+  if (!anchor) { hlNodes = null; hlEdges = null; return; }
+
+  const set = new Set([anchor]);
+  for (const nb of adj.get(anchor)) set.add(nb.id);
+
+  if (state.selected) {
+    const p = pathToRoot(anchor);
+    p.forEach(x => set.add(x));
+  }
+  hlNodes = set;
+
+  const es = new Set();
+  edges.forEach((e, i) => {
+    if (set.has(e.s) && set.has(e.t)) es.add(i);
+  });
+  hlEdges = es;
+}
+
+function draw() {
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+  ctx.translate(view.x, view.y);
+  ctx.scale(view.s, view.s);
+
+  const t = performance.now() / 1000;
+
+  /* ---- 边 ---- */
+  edges.forEach((e, i) => {
+    const a = e.a, b = e.b;
+    const fam = FAM[a.fam];
+    let alpha = 0.16, w = 1.2, dash = null;
+    if (e.d) { dash = [4, 4]; alpha = 0.13; w = 1; }
+
+    if (hlEdges) {
+      if (hlEdges.has(i)) { alpha = 0.85; w = e.d ? 1.6 : 2.1; }
+      else { alpha = 0.08; w = 0.8; }
+    }
+    if (state.matched) {
+      if (!state.matched.has(a.id) && !state.matched.has(b.id)) alpha *= 0.18;
+    }
+
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    ctx.strokeStyle = e.d ? `rgba(150,163,178,${alpha})` : hexA(fam.color, alpha);
+    ctx.lineWidth = w;
+    if (dash) ctx.setLineDash(dash); else ctx.setLineDash([]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    /* 前缀标签 */
+    if (e.p && e.p !== "—" && view.s > 0.62 && (!hlEdges || hlEdges.has(i))) {
+      const mx = (a.x + b.x)/2, my = (a.y + b.y)/2;
+      const al = hlEdges ? 0.95 : 0.5;
+      ctx.font = "600 9.5px " + getFont();
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      const tw = ctx.measureText(e.p).width;
+      ctx.fillStyle = `rgba(7,10,15,${al*0.85})`;
+      ctx.fillRect(mx - tw/2 - 3.5, my - 7, tw + 7, 14);
+      ctx.fillStyle = hexA(fam.color, al);
+      ctx.fillText(e.p, mx, my);
+    }
+    /* 派生后缀标签 */
+    if (e.d && view.s > 0.68 && hlEdges && hlEdges.has(i)) {
+      const mx = (a.x + b.x)/2, my = (a.y + b.y)/2;
+      ctx.font = "600 9.5px " + getFont();
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      const tw = ctx.measureText(e.d).width;
+      ctx.fillStyle = "rgba(7,10,15,.85)";
+      ctx.fillRect(mx - tw/2 - 3.5, my - 7, tw + 7, 14);
+      ctx.fillStyle = "rgba(160,175,190,.9)";
+      ctx.fillText(e.d, mx, my);
+    }
+  });
+
+  /* ---- 节点 ---- */
+  for (const n of nodes) {
+    const fam = FAM[n.fam];
+    const hidden = state.offFam.has(n.fam);
+    let alpha = hidden ? 0.10 : 1;
+
+    if (hlNodes) {
+      if (hlNodes.has(n.id)) alpha *= 1;
+      else alpha *= 0.38;
+    }
+    if (state.matched && !state.matched.has(n.id)) alpha *= 0.2;
+
+    if (n.type === "word") {
+      drawWord(n, fam, alpha, t);
+    } else if (n.type === "branch") {
+      drawBranch(n, fam, alpha);
+    } else {
+      drawRoot(n, fam, alpha, t);
+    }
+  }
+
+  /* 顶部空气光 */
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+
+function getFont(){ return `-apple-system,"Segoe UI","Microsoft YaHei",sans-serif`; }
+
+function hexA(hex, a) {
+  const h = hex.replace("#","");
+  const r = parseInt(h.slice(0,2),16), g = parseInt(h.slice(2,4),16), b = parseInt(h.slice(4,6),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+function drawWord(n, fam, alpha, t) {
+  const isHover = state.hover === n.id;
+  const isSel = state.selected === n.id;
+  let label = n.label;
+  let hideLabel = false;
+
+  if (state.quiz && !state.revealed.has(n.id)) {
+    hideLabel = true;
+    label = "?";
+  }
+
+  const baseR = n.r;
+  const r = baseR * (isHover ? 1.55 : 1) * (isSel ? 1.45 : 1);
+
+  /* 光晕 */
+  if (isSel || isHover || (state.matched && state.matched.has(n.id))) {
+    const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, 26);
+    g.addColorStop(0, hexA(fam.color, 0.28 * alpha));
+    g.addColorStop(1, hexA(fam.color, 0));
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(n.x, n.y, 26, 0, 6.2832); ctx.fill();
+  }
+
+  ctx.beginPath();
+  ctx.arc(n.x, n.y, r, 0, 6.2832);
+  ctx.fillStyle = hexA(fam.color, 0.9 * alpha);
+  ctx.fill();
+
+  /* 主词加白芯 */
+  if (n.level === "一级主词") {
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, r * 0.42, 0, 6.2832);
+    ctx.fillStyle = `rgba(255,255,255,${0.85*alpha})`;
+    ctx.fill();
+  }
+
+  /* 标签 */
+  const fs = n.level === "一级主词" ? 13 : 12.5;
+  const fw = n.level === "一级主词" ? "600 " : "500 ";
+  const off = baseR + 9;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  ctx.lineJoin = "round";
+
+  if (hideLabel) {
+    ctx.font = "700 14px " + getFont();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = `rgba(7,10,15,${0.92*alpha})`;
+    ctx.strokeText("?", n.x + off, n.y + 0.5);
+    ctx.fillStyle = hexA(fam.color, 0.95*alpha);
+    ctx.fillText("?", n.x + off, n.y + 0.5);
+  } else {
+    ctx.font = fw + fs + "px " + getFont();
+    /* 暗色描边保证任何背景下可读 */
+    ctx.lineWidth = 3.2;
+    ctx.strokeStyle = `rgba(7,10,15,${0.9*alpha})`;
+    ctx.strokeText(label, n.x + off, n.y + 0.5);
+
+    ctx.fillStyle = `rgba(214,224,234,${alpha})`;
+    if (isSel || isHover) ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+    ctx.fillText(label, n.x + off, n.y + 0.5);
+
+    /* 主词小标记 */
+    if (n.level === "一级主词" && view.s > 0.6) {
+      ctx.font = "500 9px " + getFont();
+      ctx.lineWidth = 2.6;
+      ctx.strokeStyle = `rgba(7,10,15,${0.85*alpha})`;
+      ctx.strokeText("主词", n.x + off, n.y + 14);
+      ctx.fillStyle = hexA(fam.color, 0.62 * alpha);
+      ctx.fillText("主词", n.x + off, n.y + 14);
+    }
+  }
+}
+
+function drawBranch(n, fam, alpha) {
+  const isHover = state.hover === n.id;
+  const r = n.r * (isHover ? 1.12 : 1);
+  ctx.beginPath();
+  ctx.arc(n.x, n.y, r, 0, 6.2832);
+  ctx.fillStyle = `rgba(11,16,23,${0.95*alpha})`;
+  ctx.fill();
+  ctx.strokeStyle = hexA(fam.color, 0.55 * alpha);
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+
+  ctx.font = "600 11.5px " + getFont();
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = hexA(fam.color, 0.95 * alpha);
+  ctx.fillText(n.label, n.x, n.y + 0.5);
+}
+
+function drawRoot(n, fam, alpha, t) {
+  const isHover = state.hover === n.id;
+  const isSel = state.selected === n.id;
+  const pulse = 1 + Math.sin(t * 1.3 + n.x * 0.01) * 0.03;
+  const r = n.r * pulse * (isHover ? 1.07 : 1);
+
+  /* 外圈光晕 */
+  const g = ctx.createRadialGradient(n.x, n.y, r*0.5, n.x, n.y, r*1.75);
+  g.addColorStop(0, hexA(fam.color, 0.14 * alpha));
+  g.addColorStop(1, hexA(fam.color, 0));
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(n.x, n.y, r*1.75, 0, 6.2832); ctx.fill();
+
+  /* 球体 */
+  const g2 = ctx.createRadialGradient(n.x - r*0.35, n.y - r*0.4, r*0.1, n.x, n.y, r);
+  g2.addColorStop(0, hexA(fam.color, 0.95 * alpha));
+  g2.addColorStop(0.62, hexA(fam.color, 0.42 * alpha));
+  g2.addColorStop(1, `rgba(10,15,21,${alpha})`);
+  ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, 6.2832);
+  ctx.fillStyle = g2; ctx.fill();
+  ctx.strokeStyle = hexA(fam.color, 0.85 * alpha);
+  ctx.lineWidth = 1.4; ctx.stroke();
+
+  /* 词根名 */
+  const fs = n.label.length > 5 ? 13 : 17;
+  ctx.font = `700 ${fs}px ${getFont()}`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+  ctx.fillText(n.label, n.x, n.y);
+
+  if (isSel || isHover) {
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, r + 4, 0, 6.2832);
+    ctx.strokeStyle = hexA(fam.color, 0.5);
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+}
+
+/* =========================================================
+   5. 主循环
+   ========================================================= */
+let dragNode = null, dragMoved = false, lastX = 0, lastY = 0, panning = false;
+
+function loop() {
+  if (dragNode) alpha = Math.max(alpha, 0.4);
+  if (alpha > 0.02) {
+    physics(true);
+    physics(true);
+  }
+  computeHighlight();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+/* =========================================================
+   6. 交互
+   ========================================================= */
+function toWorld(sx, sy) {
+  return {x: (sx - view.x) / view.s, y: (sy - view.y) / view.s};
+}
+
+function pick(sx, sy) {
+  const p = toWorld(sx, sy);
+  let best = null, bd = Infinity;
+  for (const n of nodes) {
+    if (state.offFam.has(n.fam)) continue;
+    const d = Math.hypot(n.x - p.x, n.y - p.y);
+    const hit = n.type === "word" ? n.r + 14 : n.r + 4;
+    if (d < hit && d < bd) { bd = d; best = n; }
+  }
+  return best;
+}
+
+function localPos(e) {
+  const r = canvas.getBoundingClientRect();
+  return {x: e.clientX - r.left, y: e.clientY - r.top};
+}
+
+canvas.addEventListener("mousedown", e => {
+  if (e.button !== 0 && e.button !== 1) { panning = true; lastX = e.clientX; lastY = e.clientY; dragMoved = false; canvas.classList.add("dragging"); return; }
+  const p = localPos(e);
+  lastX = e.clientX; lastY = e.clientY;
+  dragMoved = false;
+  const n = pick(p.x, p.y);
+  if (n) {
+    dragNode = n; n.fixed = true;
+    canvas.classList.add("dragging");
+  } else {
+    panning = true; canvas.classList.add("dragging");
+  }
+});
+
+window.addEventListener("mousemove", e => {
+  if (!dragNode && !panning) {
+    const p = localPos(e);
+    if (p.x < 0 || p.y < 0 || p.x > W || p.y > H) { state.hover = null; return; }
+    const n = pick(p.x, p.y);
+    state.hover = n ? n.id : null;
+    canvas.style.cursor = n ? "pointer" : "grab";
+    return;
+  }
+  if (dragNode) {
+    const p = localPos(e);
+    if (Math.hypot(e.clientX-lastX, e.clientY-lastY) > 3) dragMoved = true;
+    const w = toWorld(p.x, p.y);
+    dragNode.x = w.x; dragNode.y = w.y;
+    lastX = e.clientX; lastY = e.clientY;
+    return;
+  }
+  if (panning) {
+    const dx = e.clientX - lastX, dy = e.clientY - lastY;
+    if (Math.hypot(dx, dy) > 3) dragMoved = true;
+    view.x += dx; view.y += dy;
+    lastX = e.clientX; lastY = e.clientY;
+  }
+});
+
+window.addEventListener("mouseup", e => {
+  if (dragNode) {
+    const wasDrag = dragMoved;
+    dragNode.fixed = false;
+    if (!wasDrag) selectNode(dragNode.id);
+    dragNode = null;
+  } else if (panning) {
+    if (!dragMoved) selectNode(null);
+    panning = false;
+  }
+  canvas.classList.remove("dragging");
+});
+
+canvas.addEventListener("wheel", e => {
+  e.preventDefault();
+  const p = localPos(e);
+  const before = toWorld(p.x, p.y);
+  const factor = Math.exp(-e.deltaY * 0.0016);
+  view.s = Math.min(2.4, Math.max(0.32, view.s * factor));
+  const after = toWorld(p.x, p.y);
+  view.x += (after.x - before.x) * view.s;
+  view.y += (after.y - before.y) * view.s;
+}, {passive:false});
+
+canvas.addEventListener("contextmenu", e => e.preventDefault());
+
+/* =========================================================
+   7. 详情面板
+   ========================================================= */
+const panel = document.getElementById("panel");
+
+function selectNode(id) {
+  if (!id) {
+    state.selected = null;
+    panel.classList.remove("show");
+    return;
+  }
+  const n = nmap.get(id);
+  if (!n) return;
+  state.selected = id;
+  renderPanel(n);
+  panel.classList.add("show");
+}
+
+function renderPanel(n) {
+  const fam = FAM[n.fam];
+  const isWord = n.type === "word";
+
+  let h = `<button class="p-close" onclick="closePanel()">✕</button>`;
+  h += `<div class="p-kicker" style="color:${fam.color}">${fam.name} · ${fam.src}</div>`;
+
+  if (!isWord) {
+    h += `<div class="p-word">${n.label}</div>`;
+    h += `<div class="p-gloss" style="color:#9fb0c0">${n.info || ""}</div>`;
+    panel.innerHTML = h;
+    return;
+  }
+
+  if (state.quiz && !state.revealed.has(n.id)) {
+    h += `<div class="p-word" style="color:${fam.color}">${n.label}</div>`;
+    h += `<div class="p-ipa"><span class="pos">${n.pos}</span></div>`;
+    h += `<div class="sec"><div class="sec-h">先想一下</div>
+          <div class="hook">它的中文意思是什么？点「显示答案」再看。</div>
+          <button onclick="revealCurrent()" style="margin-top:12px;padding:8px 16px;border-radius:8px;border:1px solid ${fam.color}55;background:${fam.color}18;color:${fam.color};font-family:inherit;font-size:12.5px;cursor:pointer">显示答案</button>
+          </div>`;
+    panel.innerHTML = h;
+    return;
+  }
+
+  h += `<div class="p-word">${n.label}</div>`;
+  h += `<div class="p-ipa"><span class="pos">${n.pos}</span>${n.ipa}</div>`;
+  h += `<div class="p-gloss">${n.gloss}</div>`;
+
+  if (n.level) {
+    const lc = n.level === "一级主词" ? fam.color : (n.level === "半主词" ? "#d3b26a" : "#7d8b99");
+    h += `<div style="margin-top:10px;font-size:10.5px;color:${lc};letter-spacing:.6px">● ${n.level}</div>`;
+  }
+
+  if (n.senses) {
+    h += `<div class="sec"><div class="sec-h">义项</div><ul>` +
+         n.senses.map(s => `<li>${s}</li>`).join("") + `</ul></div>`;
+  }
+  if (n.formula) {
+    h += `<div class="sec"><div class="sec-h">构词</div><div class="formula">${n.formula}</div></div>`;
+  }
+  if (n.coll) {
+    h += `<div class="sec"><div class="sec-h">高频搭配</div><div class="chiprow">` +
+         n.coll.map(c => `<span class="chip">${c}</span>`).join("") + `</div></div>`;
+  }
+  if (n.ex) {
+    h += `<div class="sec"><div class="sec-h">例句</div><div class="ex">${n.ex}</div></div>`;
+  }
+  if (n.hook) {
+    h += `<div class="sec"><div class="sec-h">记忆钩</div><div class="hook">${n.hook}</div></div>`;
+  }
+
+  const path = [...pathToRoot(n.id)];
+  if (path.length > 1) {
+    const chain = path.map(id => {
+      const p = nmap.get(id);
+      return `<span class="pn">${p.label}</span>`;
+    }).join('<span class="ar">▸</span>');
+    h += `<div class="sec"><div class="sec-h">记忆路径</div><div class="pathvis">${chain}</div></div>`;
+  }
+
+  panel.innerHTML = h;
+}
+
+function closePanel() {
+  state.selected = null;
+  panel.classList.remove("show");
+}
+window.closePanel = closePanel;
+
+function revealCurrent() {
+  if (!state.selected) return;
+  state.revealed.add(state.selected);
+  renderPanel(nmap.get(state.selected));
+}
+window.revealCurrent = revealCurrent;
+
+/* =========================================================
+   8. UI：图例 / 搜索 / 模式
+   ========================================================= */
+const legend = document.getElementById("legend");
+legend.innerHTML = Object.entries(FAM).map(([k, f]) => `
+  <div class="row" data-fam="${k}">
+    <span class="sw" style="background:${f.color};color:${f.color}"></span>
+    <span class="nm" style="color:${f.color}">${f.name}</span>
+    <span style="color:#5c6a77;font-size:10.5px">${f.gloss}</span>
+  </div>`).join("");
+
+legend.addEventListener("click", e => {
+  const row = e.target.closest(".row");
+  if (!row) return;
+  const fam = row.dataset.fam;
+  if (state.offFam.has(fam)) state.offFam.delete(fam);
+  else state.offFam.add(fam);
+  row.classList.toggle("off", state.offFam.has(fam));
+});
+
+const qInput = document.getElementById("q");
+qInput.addEventListener("input", () => {
+  const q = qInput.value.trim().toLowerCase();
+  state.query = q;
+  if (!q) { state.matched = null; return; }
+  const set = new Set();
+  for (const n of nodes) {
+    const hay = [n.id, n.label, n.gloss || "", (n.senses || []).join(" "),
+                 n.ipa || "", n.hook || "", (n.coll || []).join(" ")].join(" ").toLowerCase();
+    if (hay.includes(q)) set.add(n.id);
+  }
+  state.matched = set;
+});
+
+document.getElementById("mExplore").addEventListener("click", () => setMode("explore"));
+document.getElementById("mQuiz").addEventListener("click", () => setMode("quiz"));
+document.getElementById("btnReset").addEventListener("click", () => {
+  nodes.forEach(n => {
+    const c = ANCHOR[n.fam] || [0,0];
+    const j = n.type === "root" ? 0 : (n.type === "branch" ? 60 : 110);
+    n.x = c[0] + (rnd()-0.5)*j;
+    n.y = c[1] + (rnd()-0.5)*j;
+    n.vx = 0; n.vy = 0;
+  });
+  alpha = 1;
+  state.selected = null; state.query = ""; state.matched = null; qInput.value = "";
+  panel.classList.remove("show");
+  state.offFam.clear();
+  [...legend.querySelectorAll(".row")].forEach(r => r.classList.remove("off"));
+  setTimeout(fitView, 900);
+});
+
+function setMode(m) {
+  state.mode = m;
+  state.quiz = (m === "quiz");
+  state.revealed.clear();
+  document.getElementById("mExplore").classList.toggle("on", m === "explore");
+  document.getElementById("mQuiz").classList.toggle("on", m === "quiz");
+  if (m === "quiz") toast("自测模式：单词已隐藏，点击节点看答案");
+  if (state.selected) renderPanel(nmap.get(state.selected));
+}
+
+document.getElementById("mRandom").addEventListener("click", () => {
+  const words = nodes.filter(n => n.type === "word");
+  const pickN = words[Math.floor(Math.random() * words.length)];
+  state.quiz = true;
+  state.mode = "quiz";
+  state.revealed.clear();
+  document.getElementById("mExplore").classList.remove("on");
+  document.getElementById("mQuiz").classList.add("on");
+  state.selected = pickN.id;
+  renderPanel(pickN);
+  panel.classList.add("show");
+  focusNode(pickN);
+  toast("随机抽考：先自己想意思，再看答案");
+});
+
+function focusNode(n) {
+  view.x = W/2 - n.x * view.s;
+  view.y = H/2 - n.y * view.s;
+}
+
+const toastEl = document.getElementById("toast");
+let toastTimer = null;
+function toast(msg) {
+  toastEl.textContent = msg;
+  toastEl.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toastEl.classList.remove("show"), 2600);
+}
+window.toast = toast;
+
+/* 快捷键 */
+window.addEventListener("keydown", e => {
+  if (e.target.tagName === "INPUT") {
+    if (e.key === "Escape") { qInput.value = ""; state.query = ""; state.matched = null; qInput.blur(); }
+    return;
+  }
+  if (e.key === "Escape") { closePanel(); }
+  if (e.key === "r" || e.key === "R") document.getElementById("btnReset").click();
+  if (e.key === "/") { e.preventDefault(); qInput.focus(); }
+});
+
+/* =========================================================
+   9. 启动
+   ========================================================= */
+resize();
+for (let i = 0; i < 460; i++) physics(false);   // 预热布局到收敛
+alpha = 0.05;
+fitView();
+loop();
+</script>
+</body>
+</html>

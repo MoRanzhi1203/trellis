@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trellis · 12 天词库</title>
+<style>
+  :root {
+    --bg: #f6f7f4;
+    --panel: #ffffff;
+    --ink: #1f2a24;
+    --muted: #6b7a72;
+    --line: #e3e8e2;
+    --green: #2f6b4f;
+    --green-weak: #e7f0ea;
+    --amber: #9a6b12;
+    --amber-weak: #f8efd9;
+    --blue: #2d5f8a;
+    --blue-weak: #e4eef7;
+    --grey: #9aa5a0;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 15px/1.65 -apple-system, "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+  }
+  header {
+    position: sticky; top: 0; z-index: 20;
+    background: rgba(246,247,244,.92);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+  }
+  .bar {
+    max-width: 1180px; margin: 0 auto; padding: 14px 22px;
+    display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+  }
+  .brand { font-weight: 700; font-size: 18px; letter-spacing: .4px; }
+  .brand small { font-weight: 400; color: var(--muted); margin-left: 8px; font-size: 12px; }
+  .nav {
+    margin-left: 10px; font-size: 12px; color: var(--green); text-decoration: none;
+    border: 1px solid #cfe0d5; background: var(--green-weak); border-radius: 99px; padding: 2px 10px;
+  }
+  .nav:hover { background: #dcebe1; }
+  .progress { flex: 1; min-width: 180px; }
+  .track { height: 6px; background: var(--line); border-radius: 99px; overflow: hidden; }
+  .track i { display: block; height: 100%; background: var(--green); border-radius: 99px; transition: width .3s; }
+  .progress span { font-size: 12px; color: var(--muted); }
+  .search { position: relative; }
+  .search input {
+    width: 240px; padding: 8px 12px 8px 32px; border: 1px solid var(--line);
+    border-radius: 9px; background: #fff; font: inherit; font-size: 13px; outline: none;
+  }
+  .search input:focus { border-color: var(--green); box-shadow: 0 0 0 3px var(--green-weak); }
+  .search::before { content: "⌕"; position: absolute; left: 11px; top: 6px; color: var(--grey); font-size: 16px; }
+  .layout {
+    max-width: 1180px; margin: 0 auto; padding: 22px;
+    display: grid; grid-template-columns: 230px 1fr; gap: 22px; align-items: start;
+  }
+  aside { position: sticky; top: 86px; }
+  .days { display: flex; flex-direction: column; gap: 6px; }
+  .day {
+    text-align: left; border: 1px solid transparent; background: transparent;
+    padding: 9px 12px; border-radius: 10px; cursor: pointer; font: inherit; color: var(--ink);
+    display: flex; align-items: center; gap: 10px; width: 100%;
+  }
+  .day:hover { background: #eef1ec; }
+  .day.active { background: var(--green-weak); border-color: #cfe0d5; }
+  .day .n { font-weight: 700; min-width: 54px; white-space: nowrap; }
+  .day .meta { font-size: 12px; color: var(--muted); }
+  .day .dot { width: 7px; height: 7px; border-radius: 50%; margin-left: auto; background: var(--line); }
+  .day.learned .dot { background: var(--green); }
+  .day.pending { color: var(--grey); }
+  .day.pending .n { color: var(--grey); }
+
+  main { min-width: 0; }
+  .card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+    padding: 20px 22px; margin-bottom: 18px;
+  }
+  .day-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .day-head h1 { font-size: 22px; margin: 0; }
+  .tag {
+    font-size: 12px; padding: 2px 9px; border-radius: 99px; background: var(--green-weak);
+    color: var(--green); font-weight: 600;
+  }
+  .tag.pending { background: #eef0ee; color: var(--grey); }
+  .day-sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .review {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    background: var(--amber-weak); border: 1px solid #f0e0b8; color: #6d4c0c;
+    border-radius: 12px; padding: 12px 16px; font-size: 13.5px; margin-bottom: 18px;
+  }
+  .review b { color: #5a3d07; }
+  .review.next { background: var(--blue-weak); border-color: #cfe0ef; color: #1f4b6e; }
+
+  section.group { margin-top: 26px; }
+  section.group:first-of-type { margin-top: 8px; }
+  .group-title {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; font-weight: 700; color: var(--green); letter-spacing: .3px;
+    margin-bottom: 10px;
+  }
+  .group-title::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  .word {
+    display: grid; grid-template-columns: 190px 1fr; gap: 16px;
+    padding: 11px 12px; border-radius: 10px; border-bottom: 1px dashed var(--line);
+    cursor: pointer; align-items: baseline;
+  }
+  .word:hover { background: #f4f7f3; }
+  .word.mastered { opacity: .5; }
+  .word.mastered .term { text-decoration: line-through; text-decoration-thickness: 1px; }
+  .term { font-family: ui-monospace, "Cascadia Code", Consolas, "Segoe UI", sans-serif; font-size: 15.5px; font-weight: 700; }
+  .term.main { color: var(--green); }
+  .term .k { font-size: 10.5px; font-weight: 500; color: var(--muted); margin-left: 6px; border: 1px solid var(--line); padding: 0 4px; border-radius: 4px; vertical-align: 2px; }
+  .term .k.main { color: var(--green); border-color: #cfe0d5; background: var(--green-weak); }
+  .senses { font-size: 14px; }
+  .sense { margin: 0 0 4px; }
+  .pos { font-style: italic; color: var(--muted); margin-right: 8px; font-size: 13px; }
+  .meaning { color: var(--ink); }
+  .meaning + .meaning::before { content: "；"; color: var(--grey); margin-right: 4px; }
+  .empty { color: var(--muted); padding: 40px 10px; text-align: center; }
+  .empty b { color: var(--ink); }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 18px; }
+  .results .word { grid-template-columns: 190px 1fr; }
+  .results .day-ref { color: var(--muted); font-size: 12px; }
+
+  @media (max-width: 820px) {
+    .layout { grid-template-columns: 1fr; padding: 14px; }
+    aside { position: static; }
+    .days { flex-direction: row; overflow-x: auto; padding-bottom: 6px; }
+    .day { flex: 0 0 auto; min-width: 116px; }
+    .word { grid-template-columns: 1fr; gap: 3px; }
+    .search input { width: 100%; }
+    .search { width: 100%; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <div class="brand">Trellis <small>12 天词库</small> <a class="nav" href="词库网络图.html">网络图</a></div>
+    <div class="progress">
+      <div class="track"><i id="progFill" style="width:0%"></i></div>
+      <span id="progText">加载中…</span>
+    </div>
+    <div class="search"><input id="search" type="search" placeholder="搜索单词或释义（按 / 聚焦）" autocomplete="off"></div>
+  </div>
+</header>
+
+<div class="layout">
+  <aside><div class="days" id="dayList"></div></aside>
+  <main>
+    <div id="reviewBanner"></div>
+    <div id="content"></div>
+  </main>
+</div>
+
+<script src="data/words.js"></script>
+<script>
+(function () {
+  const D = window.TRELLIS;
+  if (!D) {
+    document.getElementById('content').innerHTML = '<div class="empty">数据文件 data/words.js 未加载。<br>请确认 <b>data/words.js</b> 与本页面在同一目录下。</div>';
+    return;
+  }
+  const MASTERED_KEY = 'trellis.mastered.v1';
+  const mastered = new Set(JSON.parse(localStorage.getItem(MASTERED_KEY) || '[]'));
+  const byDay = new Map(D.days.map(d => [d.day, d]));
+  const totalWords = D.days.reduce((n, d) => n + d.groups.reduce((m, g) => m + g.words.length, 0), 0);
+
+  let currentDay = (D.days.length ? D.days[D.days.length - 1].day : 1);
+  let query = '';
+
+  function fmt(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  function parse(s) {
+    const [y, m, d] = s.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+  function addDays(s, n) {
+    const d = parse(s); d.setDate(d.getDate() + n); return d;
+  }
+  const today = fmt(new Date());
+
+  function saveMastered() {
+    localStorage.setItem(MASTERED_KEY, JSON.stringify([...mastered]));
+  }
+
+  function renderProgress() {
+    const learned = D.days.filter(d => d.learned).length;
+    const pct = Math.round(learned / D.meta.planDays * 100);
+    document.getElementById('progFill').style.width = pct + '%';
+    document.getElementById('progText').textContent =
+      '已录入 ' + D.days.length + ' / ' + D.meta.planDays + ' 天 · 已学 ' + learned +
+      ' 天 · 共 ' + totalWords + ' 条';
+  }
+
+  function renderDayList() {
+    const list = document.getElementById('dayList');
+    list.innerHTML = '';
+    for (let i = 1; i <= D.meta.planDays; i++) {
+      const d = byDay.get(i);
+      const btn = document.createElement('button');
+      btn.className = 'day' + (i === currentDay ? ' active' : '') +
+        (d && d.learned ? ' learned' : '') + (!d ? ' pending' : '');
+      btn.innerHTML = '<span class="n">Day ' + i + '</span>' +
+        '<span class="meta">' + (d ? (d.words_placeholder || countWords(d) + ' 词') : '待录入') + '</span>' +
+        '<span class="dot"></span>';
+      btn.onclick = () => { currentDay = i; query = ''; document.getElementById('search').value = ''; render(); };
+      list.appendChild(btn);
+    }
+  }
+
+  function countWords(day) {
+    return day.groups.reduce((m, g) => m + g.words.length, 0);
+  }
+
+  function renderReviewBanner() {
+    const box = document.getElementById('reviewBanner');
+    const items = [];
+    for (const d of D.days) {
+      if (!d.learned) continue;
+      D.meta.reviewOffsets.forEach((off, idx) => {
+        const due = fmt(addDays(d.date, off));
+        items.push({ day: d.day, round: idx + 1, off, due });
+      });
+    }
+    if (!items.length) { box.innerHTML = ''; return; }
+    const todays = items.filter(x => x.due === today);
+    if (todays.length) {
+      box.innerHTML = '<div class="review">🔁 <b>今日复习</b>' +
+        todays.map(x => 'Day ' + x.day + ' 第 ' + x.round + ' 次（+' + x.off + ' 天）').join(' · ') +
+        '</div>';
+      return;
+    }
+    const future = items.filter(x => x.due > today).sort((a, b) => a.due.localeCompare(b.due));
+    if (!future.length) {
+      box.innerHTML = '<div class="review next">✅ 所有复习已完成</div>';
+      return;
+    }
+    const n = future[0];
+    const gap = Math.round((parse(n.due) - parse(today)) / 86400000);
+    box.innerHTML = '<div class="review next">📅 下一次复习：<b>' + n.due.slice(5) + '</b> · Day ' + n.day +
+      ' 第 ' + n.round + ' 次（' + (gap === 1 ? '明天' : gap + ' 天后') + '）</div>';
+  }
+
+  function sensesHtml(w) {
+    return w.senses.map(s =>
+      '<div class="sense">' + (s.pos ? '<span class="pos">' + s.pos + '</span>' : '') +
+      s.meanings.map(m => '<span class="meaning">' + m + '</span>').join('') + '</div>'
+    ).join('');
+  }
+
+  function wordRow(w, dayNo) {
+    const el = document.createElement('div');
+    el.className = 'word' + (mastered.has(w.id) ? ' mastered' : '');
+    el.dataset.id = w.id;
+    el.innerHTML = '<div class="term' + (w.main ? ' main' : '') + '">' + w.term +
+      (w.main ? '<span class="k main">主词</span>' : '') +
+      (w.kind === 'phrase' ? '<span class="k">短语</span>' : '') +
+      (dayNo ? ' <span class="k">D' + dayNo + '</span>' : '') + '</div>' +
+      '<div class="senses">' + sensesHtml(w) + '</div>';
+    el.onclick = () => {
+      if (mastered.has(w.id)) mastered.delete(w.id); else mastered.add(w.id);
+      saveMastered();
+      el.classList.toggle('mastered');
+    };
+    return el;
+  }
+
+  function renderDay() {
+    const c = document.getElementById('content');
+    const d = byDay.get(currentDay);
+    c.innerHTML = '';
+    if (!d) {
+      c.innerHTML = '<div class="card"><div class="empty"><b>Day ' + currentDay + '</b> 还没录入。<br>把当天的单词表发过来，我来补进来。</div></div>';
+      return;
+    }
+    const head = document.createElement('div');
+    head.className = 'card';
+    head.innerHTML = '<div class="day-head"><h1>Day ' + d.day + '</h1>' +
+      '<span class="tag">' + (d.learned ? '已学习' : '已录入') + '</span>' +
+      '<span class="day-sub">' + d.date + ' · ' + countWords(d) + ' 条</span></div>' +
+      (d.note ? '<div class="day-sub" style="margin-top:6px">' + d.note + '</div>' : '') +
+      '<div class="hint">点击任意词条可标记「已掌握」，再点取消。标记保存在本机浏览器。</div>';
+    c.appendChild(head);
+
+    for (const g of d.groups) {
+      const sec = document.createElement('section');
+      sec.className = 'group';
+      const title = document.createElement('div');
+      title.className = 'group-title';
+      title.textContent = g.label;
+      sec.appendChild(title);
+      for (const w of g.words) sec.appendChild(wordRow(w, null));
+      c.appendChild(sec);
+    }
+  }
+
+  function renderSearch(q) {
+    const c = document.getElementById('content');
+    c.innerHTML = '';
+    const low = q.toLowerCase();
+    const hits = [];
+    for (const d of D.days) {
+      for (const g of d.groups) {
+        for (const w of g.words) {
+          const hay = (w.term + ' ' + w.senses.flatMap(s => s.meanings).join(' ')).toLowerCase();
+          if (hay.includes(low)) hits.push({ d, w });
+        }
+      }
+    }
+    const card = document.createElement('div');
+    card.className = 'card results';
+    card.innerHTML = '<div class="day-sub" style="margin-bottom:10px">搜索「' + q + '」· ' + hits.length + ' 条结果</div>';
+    if (!hits.length) {
+      card.innerHTML += '<div class="empty">没有匹配的单词。</div>';
+    } else {
+      for (const h of hits) card.appendChild(wordRow(h.w, h.d.day));
+    }
+    c.appendChild(card);
+  }
+
+  function render() {
+    renderProgress();
+    renderDayList();
+    renderReviewBanner();
+    if (query.trim()) renderSearch(query.trim()); else renderDay();
+  }
+
+  document.getElementById('search').addEventListener('input', e => {
+    query = e.target.value;
+    if (query.trim()) {
+      document.getElementById('dayList').querySelectorAll('.day').forEach(x => x.classList.remove('active'));
+      renderSearch(query.trim());
+    } else {
+      render();
+    }
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === '/' && document.activeElement !== document.getElementById('search')) {
+      e.preventDefault();
+      document.getElementById('search').focus();
+    }
+    if (e.key === 'Escape') {
+      document.getElementById('search').value = '';
+      query = '';
+      render();
+    }
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

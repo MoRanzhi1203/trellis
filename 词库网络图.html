@@ -1,0 +1,572 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trellis · 词族网络</title>
+<style>
+  :root {
+    --bg: #f6f7f4;
+    --panel: #ffffff;
+    --ink: #1f2a24;
+    --muted: #6b7a72;
+    --line: #e3e8e2;
+    --green: #2f6b4f;
+    --blue: #2d5f8a;
+    --amber: #9a6b12;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font: 14px/1.6 -apple-system, "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  header {
+    flex: 0 0 auto; background: rgba(246,247,244,.94); backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line); z-index: 5;
+  }
+  .bar {
+    display: flex; align-items: center; gap: 16px; padding: 10px 18px; flex-wrap: wrap;
+  }
+  .brand { font-weight: 700; font-size: 17px; letter-spacing: .3px; }
+  .brand small { font-weight: 400; color: var(--muted); font-size: 12px; margin-left: 7px; }
+  .nav {
+    margin-left: 10px; font-size: 12px; color: var(--green); text-decoration: none;
+    border: 1px solid #cfe0d5; background: #e7f0ea; border-radius: 99px; padding: 2px 10px;
+  }
+  .nav:hover { background: #dcebe1; }
+  .days { display: flex; gap: 5px; overflow-x: auto; }
+  .chip {
+    border: 1px solid var(--line); background: #fff; border-radius: 8px;
+    padding: 4px 9px; font: inherit; font-size: 12px; color: var(--muted);
+    cursor: pointer; white-space: nowrap;
+  }
+  .chip.active { background: var(--green); border-color: var(--green); color: #fff; font-weight: 600; }
+  .chip.off { opacity: .45; cursor: default; }
+  .chips-gap { flex: 1; }
+  .legend { display: flex; gap: 12px; font-size: 12px; color: var(--muted); flex-wrap: wrap; }
+  .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; vertical-align: 0; }
+  .stage { position: relative; flex: 1; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; cursor: grab; }
+  canvas.grabbing { cursor: grabbing; }
+  .hint {
+    position: absolute; left: 16px; bottom: 14px; font-size: 12px; color: var(--muted);
+    background: rgba(246,247,244,.85); padding: 4px 10px; border-radius: 8px;
+    pointer-events: none;
+  }
+  .panel {
+    position: absolute; right: 16px; top: 16px; width: 320px; max-height: calc(100% - 32px);
+    overflow: auto; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 14px; box-shadow: 0 10px 30px rgba(31,42,36,.10);
+    padding: 16px 18px; display: none;
+  }
+  .panel.show { display: block; }
+  .p-close {
+    position: absolute; right: 10px; top: 8px; border: 0; background: none;
+    font-size: 15px; color: var(--muted); cursor: pointer;
+  }
+  .p-kicker { font-size: 11px; color: var(--green); letter-spacing: .8px; font-weight: 700; text-transform: uppercase; margin-bottom: 3px; }
+  .p-title { font-size: 20px; font-weight: 700; margin: 0 0 2px; }
+  .p-sub { color: var(--muted); font-size: 12.5px; margin-bottom: 12px; }
+  .p-sense { margin: 7px 0; font-size: 13.5px; }
+  .p-pos { font-style: italic; color: var(--muted); margin-right: 6px; }
+  .p-path { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin: 12px 0 4px; font-size: 12px; color: var(--muted); }
+  .p-path b { color: var(--ink); font-weight: 600; }
+  .p-list { list-style: none; padding: 0; margin: 8px 0 0; }
+  .p-list li { padding: 6px 8px; border-radius: 8px; cursor: pointer; font-size: 13px; }
+  .p-list li:hover { background: #f1f5f0; }
+  .p-list li span { color: var(--muted); font-size: 12px; margin-left: 6px; }
+  .p-note { font-size: 12px; color: var(--muted); border-top: 1px dashed var(--line); margin-top: 12px; padding-top: 9px; }
+  .empty { padding: 30px 10px; text-align: center; color: var(--muted); }
+  @media (max-width: 760px) {
+    .panel { width: auto; left: 10px; right: 10px; top: auto; bottom: 10px; max-height: 55%; }
+    .legend { display: none; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <div class="brand">Trellis <small>词族网络</small> <a class="nav" href="词库.html">词表</a></div>
+    <div class="days" id="days"></div>
+    <div class="chips-gap"></div>
+    <div class="legend" id="legend"></div>
+  </div>
+</header>
+<div class="stage" id="stage">
+  <canvas id="graph"></canvas>
+  <div class="hint">拖拽平移 · 滚轮缩放 · 点击节点看详情 · 按 R 复位</div>
+  <div class="panel" id="panel"></div>
+</div>
+<script src="data/words.js"></script>
+<script>
+(function () {
+  const D = window.TRELLIS;
+  if (!D) {
+    document.getElementById('stage').innerHTML = '<div class="empty">没有找到 <b>data/words.js</b>，请把本页放在项目根目录下。</div>';
+    return;
+  }
+
+  const PALETTE = ['#2f6b4f', '#2d5f8a', '#9a6b12', '#7a4f8a', '#a04638', '#3f7a7a'];
+  const famColor = {};
+  let famIndex = 0;
+  function colorOf(fam) {
+    if (!famColor[fam]) famColor[fam] = PALETTE[famIndex++ % PALETTE.length];
+    return famColor[fam];
+  }
+
+  const canvas = document.getElementById('graph');
+  const ctx = canvas.getContext('2d');
+  const stage = document.getElementById('stage');
+  const panel = document.getElementById('panel');
+  const daysEl = document.getElementById('days');
+  const legendEl = document.getElementById('legend');
+
+  let W = 0, H = 0, dpr = 1;
+  let nodes = [], edges = [], byId = new Map();
+  let view = { x: 0, y: 0, s: 1 };
+  let selected = null, hovered = null;
+
+  let currentDay = D.days[D.days.length - 1].day;
+
+  function countWords(d) { return d.groups.reduce((m, g) => m + g.words.length, 0); }
+
+  function build(day) {
+    nodes = []; edges = []; byId = new Map();
+    famIndex = 0;
+    for (const k in famColor) delete famColor[k];
+
+    const wordById = new Map();
+    day.groups.forEach(g => g.words.forEach(w => wordById.set(w.id, w)));
+
+    const famOfRoot = new Map();
+
+    if (day.graph) {
+      day.graph.roots.forEach(r => {
+        famOfRoot.set(r.id, r.fam);
+        colorOf(r.fam);
+        const n = { id: r.id, type: 'root', label: r.label, gloss: r.gloss || '', fam: r.fam, r: 32 };
+        nodes.push(n); byId.set(n.id, n);
+      });
+      day.graph.branches.forEach(b => {
+        const fam = famOfRoot.get(b.root) || 'other';
+        const n = { id: b.id, type: 'branch', label: b.label, fam, r: 19 };
+        nodes.push(n); byId.set(n.id, n);
+        edges.push({ a: byId.get(b.root), b: n, dash: !!b.dash, rel: '' });
+      });
+      const branchFam = new Map();
+      day.graph.branches.forEach(b => branchFam.set(b.id, famOfRoot.get(b.root) || 'other'));
+      day.graph.links.forEach(l => {
+        if (wordById.has(l.to)) {
+          const w = wordById.get(l.to);
+          const fam = branchFam.get(l.from) || 'other';
+          const n = { id: w.id, type: 'word', label: w.term, fam, r: 8, word: w };
+          nodes.push(n); byId.set(n.id, n);
+          edges.push({ a: byId.get(l.from), b: n, dash: !!l.dash, rel: l.rel || '' });
+        } else if (byId.has(l.to)) {
+          edges.push({ a: byId.get(l.from), b: byId.get(l.to), dash: !!l.dash, rel: l.rel || '' });
+        }
+      });
+      // 任何没被 link 引用的词，兜底挂到第一个分支
+      const linked = new Set(day.graph.links.map(l => l.to));
+      const firstBranch = day.graph.branches[0];
+      for (const w of wordById.values()) {
+        if (linked.has(w.id)) continue;
+        const fam = branchFam.get(firstBranch.id) || 'other';
+        const n = { id: w.id, type: 'word', label: w.term, fam, r: 8, word: w };
+        nodes.push(n); byId.set(n.id, n);
+        edges.push({ a: byId.get(firstBranch.id), b: n, dash: false, rel: '' });
+      }
+    } else {
+      // 没有 graph 定义时，按 group 自动建两层
+      const cx = 0, cy = 0;
+      day.groups.forEach((g, gi) => {
+        const rootId = 'r-' + g.key;
+        const root = { id: rootId, type: 'root', label: g.label.split('·')[0].trim(), gloss: '', fam: g.key, r: 30 };
+        nodes.push(root); byId.set(rootId, root); colorOf(g.key);
+        g.words.forEach(w => {
+          const n = { id: w.id, type: 'word', label: w.term, fam: g.key, r: 8, word: w };
+          nodes.push(n); byId.set(n.id, n);
+          edges.push({ a: root, b: n, dash: false, rel: '' });
+        });
+      });
+    }
+
+    layout();
+    fitView();
+    renderLegend();
+    draw();
+  }
+
+  function layout() {
+    const roots = nodes.filter(n => n.type === 'root');
+    const R0 = 240;
+    roots.forEach((n, i) => {
+      const a = -Math.PI / 2 + i * (Math.PI * 2 / roots.length);
+      n.x = Math.cos(a) * R0;
+      n.y = Math.sin(a) * R0;
+      n.ang = a;
+    });
+
+    const branches = nodes.filter(n => n.type === 'branch');
+    const byRoot = new Map();
+    branches.forEach(b => {
+      const p = edges.find(e => e.b === b).a;
+      if (!byRoot.has(p.id)) byRoot.set(p.id, []);
+      byRoot.get(p.id).push(b);
+    });
+    for (const [rid, list] of byRoot) {
+      const root = byId.get(rid);
+      list.forEach((b, i) => {
+        const step = 0.75;
+        const a = root.ang + (i - (list.length - 1) / 2) * step;
+        b.x = root.x + Math.cos(a) * 180;
+        b.y = root.y + Math.sin(a) * 180;
+        b.ang = a;
+      });
+    }
+
+    const words = nodes.filter(n => n.type === 'word');
+    const byBranch = new Map();
+    words.forEach(w => {
+      const e = edges.find(x => x.b === w);
+      if (!e) return;
+      if (!byBranch.has(e.a.id)) byBranch.set(e.a.id, []);
+      byBranch.get(e.a.id).push(w);
+    });
+    for (const [bid, list] of byBranch) {
+      const b = byId.get(bid);
+      list.forEach((w, i) => {
+        const n = list.length;
+        const spread = Math.min(2.6, 0.62 * n);
+        const a = b.ang + (n === 1 ? 0 : (i / (n - 1) - 0.5) * spread);
+        const dist = 106 + Math.min(46, n * 7);
+        w.x = b.x + Math.cos(a) * dist;
+        w.y = b.y + Math.sin(a) * dist;
+        w.ang = a;
+      });
+    }
+
+    // 只对单词做局部排斥，保持根与分支的骨架稳定
+    const MIN = 34;
+    for (let it = 0; it < 160; it++) {
+      for (let i = 0; i < words.length; i++) {
+        for (let j = i + 1; j < words.length; j++) {
+          const A = words[i], B = words[j];
+          const dx = B.x - A.x, dy = B.y - A.y;
+          const d = Math.hypot(dx, dy) || 0.01;
+          if (d < MIN) {
+            const f = (MIN - d) / d * 0.5;
+            A.x -= dx * f; A.y -= dy * f;
+            B.x += dx * f; B.y += dy * f;
+          }
+        }
+      }
+      for (const w of words) {
+        const e = edges.find(x => x.b === w);
+        if (!e) continue;
+        const b = e.a;
+        const dx = w.x - b.x, dy = w.y - b.y;
+        const d = Math.hypot(dx, dy) || 1;
+        const target = Math.min(150, Math.max(98, d));
+        w.x = b.x + dx / d * target;
+        w.y = b.y + dy / d * target;
+      }
+    }
+  }
+
+  function fitView() {
+    if (!nodes.length) return;
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const n of nodes) {
+      x0 = Math.min(x0, n.x - 115); y0 = Math.min(y0, n.y - 52);
+      x1 = Math.max(x1, n.x + 115); y1 = Math.max(y1, n.y + 52);
+    }
+    const pad = 26;
+    const s = Math.min((W - pad * 2) / (x1 - x0), (H - pad * 2) / (y1 - y0));
+    view.s = Math.max(0.4, Math.min(1.6, s));
+    view.x = W / 2 - ((x0 + x1) / 2) * view.s;
+    view.y = H / 2 - ((y0 + y1) / 2) * view.s;
+  }
+
+  function toWorld(sx, sy) {
+    return { x: (sx - view.x) / view.s, y: (sy - view.y) / view.s };
+  }
+
+  function pick(sx, sy) {
+    const p = toWorld(sx, sy);
+    let best = null, bd = Infinity;
+    for (const n of nodes) {
+      const d = Math.hypot(n.x - p.x, n.y - p.y);
+      const hit = n.type === 'word' ? 16 : n.r + 6;
+      if (d < hit && d < bd) { bd = d; best = n; }
+    }
+    return best;
+  }
+
+  function highlightSet() {
+    const src = hovered || selected;
+    if (!src) return null;
+    const set = new Set([src]);
+    for (const e of edges) {
+      if (e.a === src) set.add(e.b);
+      if (e.b === src) set.add(e.a);
+    }
+    return set;
+  }
+
+  function draw() {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    ctx.save();
+    ctx.translate(view.x, view.y);
+    ctx.scale(view.s, view.s);
+
+    const hl = highlightSet();
+
+    for (const e of edges) {
+      const col = colorOf(e.a.fam);
+      const active = hl && hl.has(e.a) && hl.has(e.b);
+      ctx.globalAlpha = hl ? (active ? 0.95 : 0.12) : 0.38;
+      ctx.strokeStyle = col;
+      ctx.lineWidth = (active ? 2.2 : 1.2) / view.s;
+      ctx.setLineDash(e.dash ? [5 / view.s, 5 / view.s] : []);
+      ctx.beginPath();
+      ctx.moveTo(e.a.x, e.a.y);
+      ctx.lineTo(e.b.x, e.b.y);
+      ctx.stroke();
+      if (active && e.rel) {
+        ctx.setLineDash([]);
+        ctx.globalAlpha = 0.9;
+        ctx.fillStyle = col;
+        ctx.font = '500 10px ui-monospace, Consolas, monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const mx = (e.a.x + e.b.x) / 2, my = (e.a.y + e.b.y) / 2;
+        ctx.fillText(e.rel, mx, my - 6 / view.s);
+      }
+    }
+    ctx.setLineDash([]);
+
+    for (const n of nodes) {
+      const col = colorOf(n.fam);
+      const active = !hl || hl.has(n);
+      ctx.globalAlpha = active ? 1 : 0.18;
+      const isSel = selected === n;
+      const r = n.r * (isSel ? 1.12 : 1);
+
+      if (n.type === 'root') {
+        const g = ctx.createRadialGradient(n.x - r * .3, n.y - r * .35, r * .2, n.x, n.y, r);
+        g.addColorStop(0, '#ffffff');
+        g.addColorStop(0.55, col);
+        g.addColorStop(1, col);
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+        ctx.fillStyle = g;
+        ctx.fill();
+        ctx.lineWidth = 3 / view.s;
+        ctx.strokeStyle = '#fff';
+        ctx.stroke();
+      } else if (n.type === 'branch') {
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+        ctx.fillStyle = '#fff';
+        ctx.fill();
+        ctx.lineWidth = 3 / view.s;
+        ctx.strokeStyle = col;
+        ctx.stroke();
+      } else {
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+        ctx.fillStyle = col;
+        ctx.fill();
+        ctx.lineWidth = 2 / view.s;
+        ctx.strokeStyle = '#fff';
+        ctx.stroke();
+      }
+
+      // labels
+      ctx.globalAlpha = active ? 1 : 0.22;
+      if (n.type === 'root') {
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillStyle = col;
+        ctx.font = '700 ' + (17 / view.s) + 'px -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif';
+        ctx.fillText(n.label, n.x, n.y + r + 8 / view.s);
+        if (n.gloss) {
+          ctx.fillStyle = 'rgba(31,42,36,.55)';
+          ctx.font = '400 ' + (11 / view.s) + 'px -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif';
+          ctx.fillText(n.gloss, n.x, n.y + r + 30 / view.s);
+        }
+      } else {
+        const dir = Math.cos(n.ang || 0) >= 0 ? 1 : -1;
+        ctx.textAlign = dir > 0 ? 'left' : 'right';
+        ctx.textBaseline = 'middle';
+        const off = r + 6 / view.s;
+        if (n.type === 'branch') {
+          ctx.fillStyle = 'rgba(31,42,36,.74)';
+          ctx.font = '600 ' + (11.5 / view.s) + 'px -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif';
+          ctx.fillText(n.label, n.x + dir * off, n.y);
+        } else {
+          ctx.fillStyle = 'rgba(31,42,36,.9)';
+          ctx.font = (isSel ? '700 ' : '500 ') + (11.5 / view.s) + 'px -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif';
+          ctx.fillText(n.label, n.x + dir * off, n.y);
+        }
+      }
+    }
+    ctx.restore();
+    ctx.globalAlpha = 1;
+  }
+
+  function renderLegend() {
+    const fams = [...new Set(nodes.filter(n => n.type === 'root').map(n => n.fam))];
+    legendEl.innerHTML = fams.map(f => {
+      const root = nodes.find(n => n.type === 'root' && n.fam === f);
+      return '<span><i style="background:' + colorOf(f) + '"></i>' + (root ? root.label : f) + '</span>';
+    }).join('');
+  }
+
+  function renderDays() {
+    daysEl.innerHTML = '';
+    for (let i = 1; i <= D.meta.planDays; i++) {
+      const d = D.days.find(x => x.day === i);
+      const b = document.createElement('button');
+      b.className = 'chip' + (i === currentDay ? ' active' : '') + (!d ? ' off' : '');
+      b.textContent = 'Day ' + i;
+      if (d) b.onclick = () => { currentDay = i; build(d); closePanel(); };
+      daysEl.appendChild(b);
+    }
+  }
+
+  function pathFor(n) {
+    const chain = [n];
+    let cur = n;
+    for (let i = 0; i < 6; i++) {
+      const e = edges.find(e => e.b === cur);
+      if (!e) break;
+      chain.unshift(e.a);
+      cur = e.a;
+      if (cur.type === 'root') break;
+    }
+    return chain;
+  }
+
+  function showPanel(n) {
+    selected = n;
+    panel.classList.add('show');
+    const col = colorOf(n.fam);
+    let h = '<button class="p-close" onclick="__closePanel()">✕</button>';
+
+    if (n.type === 'word') {
+      const w = n.word;
+      h += '<div class="p-kicker" style="color:' + col + '">' + (w.kind === 'phrase' ? '短语' : '单词') + '</div>';
+      h += '<h3 class="p-title">' + w.term + '</h3>';
+      h += '<div class="p-sub">Day ' + currentDay + ' · ' + (w.main ? '主词' : (w.kind === 'phrase' ? '短语' : '词条')) + '</div>';
+      h += w.senses.map(s => '<div class="p-sense">' + (s.pos ? '<span class="p-pos">' + s.pos + '</span>' : '') + s.meanings.join('；') + '</div>').join('');
+      const chain = pathFor(n);
+      h += '<div class="p-path">' + chain.map((x, i) => (i ? ' → ' : '') + '<b>' + x.label + '</b>').join('') + '</div>';
+      const siblings = edges.filter(e => e.a === chain[chain.length - 2]).map(e => e.b).filter(x => x !== n);
+      if (siblings.length) {
+        h += '<div class="p-note">同支：' + siblings.map(s => s.label).join(' · ') + '</div>';
+      }
+    } else if (n.type === 'branch') {
+      h += '<div class="p-kicker" style="color:' + col + '">语义分支</div>';
+      h += '<h3 class="p-title">' + n.label + '</h3>';
+      const kids = edges.filter(e => e.a === n).map(e => e.b);
+      h += '<ul class="p-list">' + kids.map(k => '<li data-id="' + k.id + '">' + k.label + (k.word ? '<span>' + (k.word.senses[0].meanings[0]) + '</span>' : '') + '</li>').join('') + '</ul>';
+    } else {
+      h += '<div class="p-kicker" style="color:' + col + '">词根</div>';
+      h += '<h3 class="p-title">' + n.label + '</h3>';
+      h += '<div class="p-sub">' + (n.gloss || '') + '</div>';
+      const kids = edges.filter(e => e.a === n).map(e => e.b);
+      h += '<ul class="p-list">' + kids.map(k => '<li data-id="' + k.id + '">' + k.label + '</li>').join('') + '</ul>';
+    }
+    panel.innerHTML = h;
+    panel.querySelectorAll('li[data-id]').forEach(li => {
+      li.onclick = () => { const t = byId.get(li.dataset.id); if (t) { showPanel(t); draw(); } };
+    });
+    draw();
+  }
+
+  function closePanel() {
+    panel.classList.remove('show');
+    selected = null;
+    draw();
+  }
+  window.__closePanel = closePanel;
+
+  let dragging = false, moved = false, lastX = 0, lastY = 0;
+
+  function pos(e) {
+    const r = canvas.getBoundingClientRect();
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  }
+
+  canvas.addEventListener('mousedown', e => {
+    const p = pos(e);
+    dragging = true; moved = false; lastX = p.x; lastY = p.y;
+    canvas.classList.add('grabbing');
+  });
+  canvas.addEventListener('mousemove', e => {
+    const p = pos(e);
+    if (dragging) {
+      const dx = p.x - lastX, dy = p.y - lastY;
+      if (Math.abs(dx) + Math.abs(dy) > 2) moved = true;
+      view.x += dx; view.y += dy;
+      lastX = p.x; lastY = p.y;
+      draw();
+      return;
+    }
+    const n = pick(p.x, p.y);
+    if (n !== hovered) { hovered = n; canvas.style.cursor = n ? 'pointer' : 'grab'; draw(); }
+  });
+  window.addEventListener('mouseup', e => {
+    if (!dragging) return;
+    dragging = false;
+    canvas.classList.remove('grabbing');
+    if (!moved) {
+      const p = pos(e);
+      const n = pick(p.x, p.y);
+      if (n) showPanel(n); else closePanel();
+    }
+  });
+  canvas.addEventListener('mouseleave', () => { hovered = null; draw(); });
+  canvas.addEventListener('wheel', e => {
+    e.preventDefault();
+    const p = pos(e);
+    const before = toWorld(p.x, p.y);
+    const f = Math.exp(-e.deltaY * 0.0015);
+    view.s = Math.max(0.35, Math.min(3, view.s * f));
+    const after = toWorld(p.x, p.y);
+    view.x += (after.x - before.x) * view.s;
+    view.y += (after.y - before.y) * view.s;
+    draw();
+  }, { passive: false });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'r' || e.key === 'R') { fitView(); draw(); }
+    if (e.key === 'Escape') closePanel();
+  });
+
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    const r = stage.getBoundingClientRect();
+    W = r.width; H = r.height;
+    canvas.width = Math.round(W * dpr);
+    canvas.height = Math.round(H * dpr);
+    draw();
+  }
+  window.addEventListener('resize', resize);
+
+  renderDays();
+  const day = D.days.find(d => d.day === currentDay);
+  resize();
+  build(day);
+  resize();
+  const hash = decodeURIComponent(location.hash.slice(1));
+  if (hash && byId.has(hash)) showPanel(byId.get(hash));
+})();
+</script>
+</body>
+</html>
