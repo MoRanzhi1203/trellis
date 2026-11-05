@@ -1,4 +1,4 @@
-# Trellis · 词汇知识图谱与智能记忆系统
+﻿# Trellis · 词汇知识图谱与智能记忆系统
 
 Trellis V1.0 把原来的静态 HTML/JS 词库升级为数据库驱动的 Web 应用：
 
@@ -31,8 +31,8 @@ powershell -ExecutionPolicy Bypass -File scripts/setup.ps1
 powershell -ExecutionPolicy Bypass -File scripts/start.ps1
 ```
 
-- 前端 <http://127.0.0.1:5173>
-- 接口文档 <http://127.0.0.1:8000/docs>
+- 前端 <http://127.0.0.1:8123>
+- 接口文档 <http://127.0.0.1:8123/docs>
 
 手动方式：
 

@@ -1,4 +1,4 @@
-# Trellis V1.0 验收报告
+﻿# Trellis V1.0 验收报告
 
 > 日期：2026-11-05　环境：conda `trellis`（Python 3.11.18）
 > 后端：FastAPI 0.162 / SQLAlchemy 2.1.8 / Alembic 1.20.1 / SQLite（WAL）
@@ -93,5 +93,5 @@ conda run -n trellis python -m pytest -q
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/setup.ps1
 powershell -ExecutionPolicy Bypass -File scripts/start.ps1
-# 浏览器 http://127.0.0.1:5173
+# 浏览器 http://127.0.0.1:8123
 ```

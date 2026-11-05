@@ -1,4 +1,4 @@
-# Trellis 用户操作说明
+﻿# Trellis 用户操作说明
 
 ## 1. 启动
 
@@ -7,8 +7,8 @@ powershell -ExecutionPolicy Bypass -File scripts/setup.ps1   # 首次
 powershell -ExecutionPolicy Bypass -File scripts/start.ps1   # 日常
 ```
 
-- 前端：<http://127.0.0.1:5173>
-- 接口文档：<http://127.0.0.1:8000/docs>
+- 前端：<http://127.0.0.1:8123>
+- 接口文档：<http://127.0.0.1:8123/docs>
 
 启动脚本不会删除或重建已有数据库。
 
