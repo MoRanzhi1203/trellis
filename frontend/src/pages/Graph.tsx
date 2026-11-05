@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import cytoscape from 'cytoscape'
 import { api } from '../services/api'
@@ -50,6 +50,103 @@ function spreadNodes(cy: cytoscape.Core, minDistance = 34) {
   }
 }
 
+/** Deterministic layout: unit blocks, each root a subtree (root → branches → words). */
+function layoutPositions(nodes: GraphNode[], edges: GraphEdge[]) {
+  const unitGroups = new Map<string, GraphNode[]>()
+  for (const node of nodes) {
+    const key = node.unit_id != null ? String(node.unit_id) : 'other'
+    const group = unitGroups.get(key) ?? []
+    group.push(node)
+    unitGroups.set(key, group)
+  }
+  const edgeBySource = new Map<number, GraphEdge[]>()
+  for (const edge of edges) {
+    const list = edgeBySource.get(edge.source_node_id) ?? []
+    list.push(edge)
+    edgeBySource.set(edge.source_node_id, list)
+  }
+
+  const keys = [...unitGroups.keys()]
+  const unitCols = Math.ceil(Math.sqrt(keys.length))
+  const UNIT_CELL = 760
+  const TREE_CELL = 400
+  const positions: Record<string, { x: number; y: number }> = {}
+
+  keys.forEach((key, unitIndex) => {
+    const list = unitGroups.get(key) ?? []
+    const byId = new Map(list.map((node) => [node.id, node]))
+    const roots = list.filter((node) => node.node_type === 'root')
+    const baseX = (unitIndex % unitCols) * UNIT_CELL
+    const baseY = Math.floor(unitIndex / unitCols) * UNIT_CELL
+    const treeCols = Math.max(1, Math.ceil(Math.sqrt(Math.max(roots.length, 1))))
+    const assigned = new Set<number>()
+
+    const childrenOf = (id: number): GraphNode[] =>
+      (edgeBySource.get(id) ?? [])
+        .map((edge) => byId.get(edge.target_node_id))
+        .filter((node): node is GraphNode => Boolean(node))
+
+    const placeRoot = (root: GraphNode, treeIndex: number) => {
+      const tx = baseX + (treeIndex % treeCols) * TREE_CELL
+      const ty = baseY + Math.floor(treeIndex / treeCols) * TREE_CELL
+      positions[String(root.id)] = { x: tx, y: ty }
+      const children = childrenOf(root.id)
+      const branches = children.filter((node) => node.node_type === 'branch')
+      const directWords = children.filter((node) => node.node_type !== 'branch')
+      children.forEach((child) => assigned.add(child.id))
+
+      if (branches.length) {
+        branches.forEach((branch, branchIndex) => {
+          const angle = (branchIndex / branches.length) * Math.PI * 2 - Math.PI / 2
+          const bx = tx + Math.cos(angle) * 92
+          const by = ty + Math.sin(angle) * 92
+          positions[String(branch.id)] = { x: bx, y: by }
+          const words = childrenOf(branch.id)
+          words.forEach((word) => assigned.add(word.id))
+          const spread = Math.min(1.6, 0.55 * Math.max(words.length, 1))
+          words.forEach((word, wordIndex) => {
+            const offset =
+              words.length === 1 ? 0 : (wordIndex / (words.length - 1) - 0.5) * spread
+            const wa = angle + offset
+            positions[String(word.id)] = {
+              x: bx + Math.cos(wa) * 82,
+              y: by + Math.sin(wa) * 82,
+            }
+          })
+        })
+      } else {
+        directWords.forEach((word, wordIndex) => {
+          const angle =
+            (wordIndex / Math.max(directWords.length, 1)) * Math.PI * 2 - Math.PI / 2
+          positions[String(word.id)] = {
+            x: tx + Math.cos(angle) * 88,
+            y: ty + Math.sin(angle) * 88,
+          }
+        })
+      }
+    }
+
+    roots.forEach((root, index) => placeRoot(root, index))
+
+    const orphans = list.filter(
+      (node) => node.node_type !== 'root' && !assigned.has(node.id),
+    )
+    if (orphans.length) {
+      const tx = baseX + (roots.length % treeCols) * TREE_CELL
+      const ty = baseY + Math.floor(roots.length / treeCols) * TREE_CELL
+      orphans.forEach((word, index) => {
+        const angle = (index / Math.max(orphans.length, 1)) * Math.PI * 2 - Math.PI / 2
+        positions[String(word.id)] = {
+          x: tx + Math.cos(angle) * 100,
+          y: ty + Math.sin(angle) * 100,
+        }
+      })
+    }
+  })
+
+  return positions
+}
+
 function colorFor(node: GraphNode, index: number) {
   const meta = node.meta as { fam?: string }
   if (meta?.fam) {
@@ -61,7 +158,7 @@ function colorFor(node: GraphNode, index: number) {
 }
 
 export default function Graph() {
-  const [mode, setMode] = useState<'explore' | 'learning'>('explore')
+  const [mode, setMode] = useState<'explore' | 'learning'>('learning')
   const [unitId, setUnitId] = useState<number | undefined>(undefined)
   const [dark, setDark] = useState(false)
   const [selected, setSelected] = useState<GraphNode | null>(null)
@@ -84,7 +181,14 @@ export default function Graph() {
         limit: 220,
         unit_id: mode === 'learning' ? unitId : undefined,
       }),
+    enabled: mode === 'explore' || Boolean(unitId),
   })
+
+  useEffect(() => {
+    if (mode === 'learning' && !unitId && units.data && units.data.length > 0) {
+      setUnitId(units.data[0].id)
+    }
+  }, [mode, unitId, units.data])
 
   const elements = useMemo(() => {
     const data = view.data
@@ -198,12 +302,10 @@ export default function Graph() {
     const cy = cyRef.current
     cy.elements().remove()
     cy.add(elements)
-    const layout = cy.layout(LAYOUT)
-    layout.on('layoutstop', () => {
-      spreadNodes(cy, 40)
-      fit()
-    })
-    layout.run()
+    const positions = layoutPositions(view.data?.nodes ?? [], view.data?.edges ?? [])
+    cy.layout({ name: 'preset', positions, fit: true, padding: 36, animate: false }).run()
+    spreadNodes(cy, 38)
+    fit()
   }, [elements, view.data, fit])
 
   useEffect(() => {
