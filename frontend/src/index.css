@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   --bg: #f6f7f4;
   --panel: #ffffff;
   --ink: #1f2a24;
@@ -128,3 +128,15 @@ tr:hover td { background: #f6f9f5; }
   .detail { position: static; }
   .graph-stage { height: calc(100vh - 240px); }
 }
+
+.graph-tools {
+  position: absolute; right: 14px; top: 14px; display: flex; gap: 6px; z-index: 3;
+}
+.graph-tools button {
+  min-width: 36px; height: 34px; padding: 0 10px; border-radius: 9px;
+  background: rgba(255, 255, 255, .94); border: 1px solid var(--line);
+  font-size: 14px; box-shadow: 0 2px 8px rgba(31, 42, 36, .08);
+}
+.graph-tools button:hover { background: #fff; }
+.dark .graph-tools button { background: #1d272c; color: #dfe9e4; border-color: #2b3a40; }
+.dark .graph-tools button:hover { background: #24323a; }

@@ -1,10 +1,20 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import cytoscape from 'cytoscape'
 import { api } from '../services/api'
 import type { GraphEdge, GraphNode } from '../types'
 
 const PALETTE = ['#2f6b4f', '#2d5f8a', '#9a6b12', '#7a4f8a', '#a04638', '#3f7a7a']
+
+const LAYOUT = {
+  name: 'cose',
+  animate: false,
+  padding: 50,
+  nodeRepulsion: 9000,
+  idealEdgeLength: 90,
+  gravity: 0.6,
+  numIter: 900,
+} as const
 
 function colorFor(node: GraphNode, index: number) {
   const meta = node.meta as { fam?: string }
@@ -29,7 +39,7 @@ export default function Graph() {
     queryFn: async () => {
       const books = await api.books.list()
       const nested = await Promise.all(books.map((book) => api.books.units(book.id)))
-      return nested.flat()
+      return nested.flat().sort((a, b) => a.order_no - b.order_no)
     },
   })
 
@@ -64,6 +74,23 @@ export default function Graph() {
     }))
     return [...nodes, ...edges]
   }, [view.data])
+
+  const fit = useCallback(() => {
+    const cy = cyRef.current
+    if (!cy) return
+    cy.fit(undefined, 40)
+    if (cy.zoom() < 0.35) {
+      cy.zoom({ level: 0.35, renderedPosition: { x: cy.width() / 2, y: cy.height() / 2 } })
+      cy.center()
+    }
+  }, [])
+
+  const zoomBy = useCallback((factor: number) => {
+    const cy = cyRef.current
+    if (!cy) return
+    const level = Math.min(3, Math.max(0.2, cy.zoom() * factor))
+    cy.zoom({ level, renderedPosition: { x: cy.width() / 2, y: cy.height() / 2 } })
+  }, [])
 
   useEffect(() => {
     if (!container.current) return
@@ -119,19 +146,30 @@ export default function Graph() {
             style: { 'border-color': '#2f6b4f', 'border-width': 3 },
           },
         ],
-        layout: { name: 'cose', animate: false, padding: 40 },
-        wheelSensitivity: 0.2,
+        layout: LAYOUT,
+        wheelSensitivity: 0.25,
+        minZoom: 0.2,
+        maxZoom: 3,
+        boxSelectionEnabled: false,
+        autounselectify: false,
+        userPanningEnabled: true,
       })
       cyRef.current.on('tap', 'node', (event) => {
         const node = view.data?.nodes.find((item) => String(item.id) === event.target.id())
         setSelected(node ?? null)
       })
+      cyRef.current.on('tap', (event) => {
+        if (event.target === cyRef.current) {
+          setSelected(null)
+        }
+      })
     }
     const cy = cyRef.current
     cy.elements().remove()
     cy.add(elements)
-    cy.layout({ name: 'cose', animate: false, padding: 40 }).run()
-  }, [elements, view.data])
+    cy.layout(LAYOUT).run()
+    window.setTimeout(() => fit(), 60)
+  }, [elements, view.data, fit])
 
   useEffect(() => {
     const cy = cyRef.current
@@ -142,18 +180,75 @@ export default function Graph() {
       .update()
   }, [dark])
 
+  useEffect(() => {
+    const handler = (event: KeyboardEvent) => {
+      const cy = cyRef.current
+      if (!cy) return
+      const tag = (event.target as HTMLElement)?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+      const step = 70
+      switch (event.key) {
+        case 'ArrowLeft':
+          cy.panBy({ x: step, y: 0 })
+          event.preventDefault()
+          break
+        case 'ArrowRight':
+          cy.panBy({ x: -step, y: 0 })
+          event.preventDefault()
+          break
+        case 'ArrowUp':
+          cy.panBy({ x: 0, y: step })
+          event.preventDefault()
+          break
+        case 'ArrowDown':
+          cy.panBy({ x: 0, y: -step })
+          event.preventDefault()
+          break
+        case '+':
+        case '=':
+          zoomBy(1.2)
+          event.preventDefault()
+          break
+        case '-':
+        case '_':
+          zoomBy(1 / 1.2)
+          event.preventDefault()
+          break
+        case 'r':
+        case 'R':
+          fit()
+          break
+        case 'Escape':
+          setSelected(null)
+          cy.elements().unselect()
+          break
+        default:
+          break
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [fit, zoomBy])
+
+  const selectLearning = () => {
+    setMode('learning')
+    if (!unitId && units.data && units.data.length > 0) {
+      setUnitId(units.data[0].id)
+    }
+  }
+
   return (
     <div className={dark ? 'dark' : ''}>
       <div className="page-head">
         <div>
           <h1>知识图谱</h1>
-          <p>所有节点与关系来自数据库接口，按需加载</p>
+          <p>滚轮缩放 · 拖拽平移 · 方向键移动 · +/- 缩放 · R 复位 · Esc 关闭</p>
         </div>
         <div className="toolbar" style={{ marginBottom: 0 }}>
           <button className={mode === 'explore' ? 'primary' : ''} onClick={() => setMode('explore')}>
             探索
           </button>
-          <button className={mode === 'learning' ? 'primary' : ''} onClick={() => setMode('learning')}>
+          <button className={mode === 'learning' ? 'primary' : ''} onClick={selectLearning}>
             学习单元
           </button>
           {mode === 'learning' && (
@@ -174,21 +269,25 @@ export default function Graph() {
 
       <div className="graph-stage">
         <div ref={container} style={{ width: '100%', height: '100%' }} />
+        <div className="graph-tools">
+          <button title="放大（+）" onClick={() => zoomBy(1.2)}>＋</button>
+          <button title="缩小（-）" onClick={() => zoomBy(1 / 1.2)}>－</button>
+          <button title="复位（R）" onClick={fit}>复位</button>
+        </div>
         {selected && (
           <div className="graph-detail">
             <div className="small muted">{selected.node_type}</div>
             <h3 style={{ margin: '2px 0 8px' }}>{selected.label}</h3>
-            {selected.lexeme_id && (
-              <div className="small">
-                词条 ID：<span className="mono">{selected.lexeme_id}</span>
-              </div>
-            )}
             <div className="small muted">
               关系：
               {view.data?.edges
                 .filter((edge) => edge.source_node_id === selected.id || edge.target_node_id === selected.id)
                 .slice(0, 8)
-                .map((edge) => `${edge.relation_type}(${edge.status})`)
+                .map((edge) => {
+                  const otherId = edge.source_node_id === selected.id ? edge.target_node_id : edge.source_node_id
+                  const other = view.data?.nodes.find((node) => node.id === otherId)
+                  return `${other?.label ?? otherId}（${edge.relation_type}）`
+                })
                 .join(' · ') || '无'}
             </div>
             <button
@@ -204,10 +303,9 @@ export default function Graph() {
         )}
       </div>
       <div className="legend" style={{ marginTop: 10 }}>
-        <span><i style={{ background: '#2f6b4f' }} />词根/工作</span>
-        <span><i style={{ background: '#2d5f8a' }} />stat 族</span>
-        <span><i style={{ background: '#9a6b12' }} />labor 族</span>
-        <span><i style={{ background: '#d9b25f' }} />派生（待审核）</span>
+        <span>实线：学习结构</span>
+        <span>橙色虚线：待审核派生</span>
+        <span>节点大小：词根 &gt; 单词</span>
       </div>
     </div>
   )
