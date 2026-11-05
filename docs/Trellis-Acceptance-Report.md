@@ -1,6 +1,7 @@
-﻿# Trellis V1.0 验收报告
+# Trellis V1.0 验收报告
 
 > 日期：2026-11-05　环境：conda `trellis`（Python 3.11.18）
+> 更新：2026-11-06 已导入 Day 2–11，词条 39 → 210，详见 `docs/12天词表扩展记录.md`。
 > 后端：FastAPI 0.162 / SQLAlchemy 2.1.8 / Alembic 1.20.1 / SQLite（WAL）
 > 前端：React 18 + TypeScript 5.6 + Vite 5.4 + Cytoscape 3.30
 

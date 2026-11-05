@@ -1,0 +1,155 @@
+{
+  "days": [
+    {
+      "day": 2,
+      "date": "2026-11-06",
+      "title": "Day 2 · change / social / public",
+      "roots": [
+        { "id": "stat", "label": "stat", "gloss": "站立 → 状态 / 统计" },
+        { "id": "change", "label": "change", "gloss": "交换 → 改变" },
+        { "id": "social", "label": "soci", "gloss": "同伴 → 社会" },
+        { "id": "public", "label": "publ", "gloss": "人民 → 公共" }
+      ],
+      "words": [
+        { "term": "statistical", "root": "stat", "pos": "adj.", "defs": ["统计的；统计学的"] },
+        { "term": "statistic", "root": "stat", "pos": "n.", "defs": ["统计数字，统计资料；[pl.] 统计学"] },
+        { "term": "stationary", "root": "stat", "pos": "adj.", "defs": ["静止不动的；固定的"] },
+        { "term": "change", "root": "change", "pos": "n. / v.", "defs": ["n. 变化；零钱 v. 改变；更换"] },
+        { "term": "exchange", "root": "change", "pos": "v. / n.", "defs": ["v. 交换；兑换；交流；交易 n. 交换；交易所"] },
+        { "term": "social", "root": "social", "pos": "adj.", "defs": ["社会的；好交际的；社交的"] },
+        { "term": "asocial", "root": "social", "pos": "adj.", "defs": ["缺乏社交性的"] },
+        { "term": "sociable", "root": "social", "pos": "adj.", "defs": ["好交际的，合群的"] },
+        { "term": "society", "root": "social", "pos": "n.", "defs": ["社会；社团，协会；上流社会"] },
+        { "term": "sociologist", "root": "social", "pos": "n.", "defs": ["社会学家"] },
+        { "term": "public", "root": "public", "pos": "adj. / n.", "defs": ["adj. 公共的；公开的；公众的；政府的 n. 公众，民众"] },
+        { "term": "publicly", "root": "public", "pos": "adv.", "defs": ["公开地；当众地；公然地"] },
+        { "term": "publicize", "root": "public", "pos": "v.", "defs": ["引起公众对…的注意；（尤指用广告）宣传"] }
+      ]
+    },
+    {
+      "day": 3,
+      "date": "2026-11-07",
+      "title": "Day 3 · human / take / government",
+      "roots": [
+        { "id": "publ", "label": "publ", "gloss": "人民 → 公共 / 出版" },
+        { "id": "human", "label": "human", "gloss": "人" },
+        { "id": "anthrop", "label": "anthrop", "gloss": "人类" },
+        { "id": "take", "label": "take", "gloss": "拿、取" },
+        { "id": "govern", "label": "govern", "gloss": "掌舵 → 治理" }
+      ],
+      "words": [
+        { "term": "publication", "root": "publ", "pos": "n.", "defs": ["出版物；出版，发行；公布，发表"] },
+        { "term": "republican", "root": "publ", "pos": "n. / adj.", "defs": ["n. 共和主义者 adj. 共和国的；共和政体的"] },
+        { "term": "human", "root": "human", "pos": "adj. / n.", "defs": ["adj. 人的；人（类）的 n. 人"] },
+        { "term": "nonhuman", "root": "human", "pos": "adj.", "defs": ["非人类的"] },
+        { "term": "humanity", "root": "human", "pos": "n.", "defs": ["人类；人性；人道；人文学科"] },
+        { "term": "humankind", "root": "human", "pos": "n.", "defs": ["人类"] },
+        { "term": "humane", "root": "human", "pos": "adj.", "defs": ["人道的"] },
+        { "term": "humanist", "root": "human", "pos": "n.", "defs": ["人道主义者"] },
+        { "term": "anthropology", "root": "anthrop", "pos": "n.", "defs": ["人类学"] },
+        { "term": "anthropologist", "root": "anthrop", "pos": "n.", "defs": ["人类学家"] },
+        { "term": "take", "root": "take", "pos": "v.", "defs": ["携带；拿，取；乘坐；花费；需要…时间；接受"] },
+        { "term": "mistake", "root": "take", "pos": "n. / v.", "defs": ["n. 错误；误解 v. 弄错；把…误认为"] },
+        { "term": "government", "root": "govern", "pos": "n.", "defs": ["政府；管理；政体"] },
+        { "term": "government-funded", "root": "govern", "pos": "adj.", "defs": ["政府拨款的"] },
+        { "term": "govern", "root": "govern", "pos": "v.", "defs": ["统治，管理；支配，控制"] },
+        { "term": "governor", "root": "govern", "pos": "n.", "defs": ["（英国殖民地的）总督；（美国的）州长"] },
+        { "term": "governance", "root": "govern", "pos": "n.", "defs": ["统治（方式）；管理（方法）"] }
+      ]
+    },
+    {
+      "day": 4,
+      "date": "2026-11-08",
+      "title": "Day 4 · accord / mean / direction",
+      "roots": [
+        { "id": "control", "label": "control", "gloss": "控制" },
+        { "id": "accord", "label": "accord", "gloss": "心 → 一致" },
+        { "id": "mean", "label": "mean", "gloss": "意图 / 中间" },
+        { "id": "direction", "label": "direct", "gloss": "引导 → 方向" }
+      ],
+      "words": [
+        { "term": "governance", "root": "control", "pos": "n.", "defs": ["统治（方式）；管理（方法）"] },
+        { "term": "control", "root": "control", "pos": "n. / v.", "defs": ["n. 控制；控制能力 v. 控制，支配；指挥"] },
+        { "term": "curb", "root": "control", "pos": "v. / n.", "defs": ["v. 控制，抑制 n. 起控制作用的事物"] },
+        { "term": "chancellor", "root": "control", "pos": "n.", "defs": ["大臣；总理；首席法官；大学名誉校长"] },
+        { "term": "accord", "root": "accord", "pos": "n. / v.", "defs": ["n. 协议，条约 v. 给予；符合"] },
+        { "term": "with one accord", "root": "accord", "pos": "", "defs": ["一致地"] },
+        { "term": "in accord(ance) with", "root": "accord", "pos": "", "defs": ["按照；与…一致"] },
+        { "term": "of one's own accord", "root": "accord", "pos": "", "defs": ["自愿地，主动地"] },
+        { "term": "record", "root": "accord", "pos": "n. / v.", "defs": ["n. 记录；最佳成绩；履历；唱片 v. 记录；录音"] },
+        { "term": "mean", "root": "mean", "pos": "v. / adj. / n.", "defs": ["v. 意思是；打算；意味着 adj. 卑鄙的；平均的 n. 平均值"] },
+        { "term": "meaning", "root": "mean", "pos": "n.", "defs": ["意义；含义"] },
+        { "term": "meaningful", "root": "mean", "pos": "adj.", "defs": ["有意义的；意味深长的"] },
+        { "term": "means", "root": "mean", "pos": "n.", "defs": ["方式，方法，手段"] },
+        { "term": "meantime", "root": "mean", "pos": "n. / adv.", "defs": ["其间；同时"] },
+        { "term": "meanwhile", "root": "mean", "pos": "adv.", "defs": ["同时；其间"] },
+        { "term": "direction", "root": "direction", "pos": "n.", "defs": ["方向；说明"] },
+        { "term": "direct", "root": "direction", "pos": "adj. / v.", "defs": ["adj. 径直的；直接的 v. 指导，管理；导演"] },
+        { "term": "director", "root": "direction", "pos": "n.", "defs": ["主任；导演；董事"] },
+        { "term": "steer", "root": "direction", "pos": "v.", "defs": ["驾驶；引导"] }
+      ]
+    },
+    {
+      "day": 5,
+      "date": "2026-11-09",
+      "title": "Day 5 · paragraph / section / sheet / question",
+      "roots": [
+        { "id": "graph", "label": "graph", "gloss": "写 → 图表" },
+        { "id": "para", "label": "para-", "gloss": "旁 / 防 / 反" },
+        { "id": "section", "label": "sect", "gloss": "切 → 部分" },
+        { "id": "sheet", "label": "sheet", "gloss": "布片 → 张" },
+        { "id": "question", "label": "quer", "gloss": "寻求 → 提问" }
+      ],
+      "words": [
+        { "term": "hijack", "root": "para", "pos": "v.", "defs": ["劫持（交通工具）；操纵（会议等）"] },
+        { "term": "paragraph", "root": "graph", "pos": "n.", "defs": ["段落，节"] },
+        { "term": "graph", "root": "graph", "pos": "n.", "defs": ["图表，曲线图"] },
+        { "term": "graphic", "root": "graph", "pos": "adj. / n.", "defs": ["adj. 形象的；绘画的 n. 图表，图形"] },
+        { "term": "parallel", "root": "para", "pos": "adj. / n. / v.", "defs": ["adj. 平行的；极相似的 n. 相似处；纬线"] },
+        { "term": "paradox", "root": "para", "pos": "n.", "defs": ["似非而是的隽语；悖论"] },
+        { "term": "parachute", "root": "para", "pos": "n. / v.", "defs": ["n. 降落伞 v. 跳伞；空投"] },
+        { "term": "paralysis", "root": "para", "pos": "n.", "defs": ["麻痹；瘫痪"] },
+        { "term": "section", "root": "section", "pos": "n.", "defs": ["片段；部分；地区；部门；截面"] },
+        { "term": "sector", "root": "section", "pos": "n.", "defs": ["部分；部门，行业；军事管制区"] },
+        { "term": "insect", "root": "section", "pos": "n.", "defs": ["昆虫"] },
+        { "term": "segment", "root": "section", "pos": "n. / v.", "defs": ["n. 段，片；部分 v. 划分，分割"] },
+        { "term": "sheet", "root": "sheet", "pos": "n.", "defs": ["床单；（一）张，（一）片"] },
+        { "term": "sheer", "root": "sheet", "pos": "adj.", "defs": ["纯粹的，十足的；陡峭的"] },
+        { "term": "question", "root": "question", "pos": "n. / v.", "defs": ["n. 问题；疑问 v. 询问；对…表示疑问"] },
+        { "term": "questionable", "root": "question", "pos": "adj.", "defs": ["可疑的"] }
+      ]
+    },
+    {
+      "day": 6,
+      "date": "2026-11-10",
+      "title": "Day 6 · increase / research / mark",
+      "roots": [
+        { "id": "cresc", "label": "cresc", "gloss": "生长" },
+        { "id": "search", "label": "search", "gloss": "绕圈寻找" },
+        { "id": "mark", "label": "mark", "gloss": "边界记号" },
+        { "id": "issue", "label": "issue", "gloss": "走出 → 议题" },
+        { "id": "mute", "label": "mute", "gloss": "沉默" }
+      ],
+      "words": [
+        { "term": "query", "root": "search", "pos": "n. / v.", "defs": ["n. 疑问 v. 询问，对…提出疑问"] },
+        { "term": "matter", "root": "issue", "pos": "n. / v.", "defs": ["n. 问题；事情；物质；毛病 v. 要紧"] },
+        { "term": "issue", "root": "issue", "pos": "n. / v.", "defs": ["n. 问题，争端；发行 v. 发行，发表；发放"] },
+        { "term": "increase", "root": "cresc", "pos": "n. / v.", "defs": ["增加；增进；提高"] },
+        { "term": "increasingly", "root": "cresc", "pos": "adv.", "defs": ["渐增地，越来越多地"] },
+        { "term": "decrease", "root": "cresc", "pos": "v. / n.", "defs": ["v. 减少 n. 减少，减小"] },
+        { "term": "mute", "root": "mute", "pos": "adj. / v.", "defs": ["adj. 哑的；无声的 v. 减轻（声音）"] },
+        { "term": "reduce", "root": "cresc", "pos": "v.", "defs": ["减少；简化"] },
+        { "term": "reduction", "root": "cresc", "pos": "n.", "defs": ["减少；降低"] },
+        { "term": "research", "root": "search", "pos": "n. / v.", "defs": ["研究；调查"] },
+        { "term": "researcher", "root": "search", "pos": "n.", "defs": ["研究员；调查者"] },
+        { "term": "search", "root": "search", "pos": "n. / v.", "defs": ["搜查，搜寻；（在计算机上）搜索"] },
+        { "term": "rake", "root": "search", "pos": "n. / v.", "defs": ["n. 耙子 v. 搜索，搜寻；用耙耙"] },
+        { "term": "mark", "root": "mark", "pos": "n. / v.", "defs": ["n. 痕迹；记号；分数 v. 打分；标明"] },
+        { "term": "marked", "root": "mark", "pos": "adj.", "defs": ["显著的，明显的；有记号的"] },
+        { "term": "markedly", "root": "mark", "pos": "adv.", "defs": ["明显地，显著地"] },
+        { "term": "marker", "root": "mark", "pos": "n.", "defs": ["标记；标志"] },
+        { "term": "remark", "root": "mark", "pos": "n. / v.", "defs": ["n. 评论 v. 评论；谈论；说起"] }
+      ]
+    }
+  ]
+}

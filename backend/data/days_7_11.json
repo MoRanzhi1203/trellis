@@ -1,0 +1,166 @@
+{
+  "days": [
+    {
+      "day": 7,
+      "date": "2026-11-11",
+      "title": "Day 7 · science / company / system / different",
+      "roots": [
+        { "id": "sci", "label": "sci", "gloss": "知道 → 科学" },
+        { "id": "company", "label": "company", "gloss": "共同吃面包 → 同伴" },
+        { "id": "system", "label": "system", "gloss": "站在一起 → 系统" },
+        { "id": "federal", "label": "federal", "gloss": "盟约 → 联邦" },
+        { "id": "differ", "label": "differ", "gloss": "分开携带 → 不同" }
+      ],
+      "words": [
+        { "term": "science", "root": "sci", "pos": "n.", "defs": ["科学"] },
+        { "term": "scientific", "root": "sci", "pos": "adj.", "defs": ["科学的；科学上的"] },
+        { "term": "scientist", "root": "sci", "pos": "n.", "defs": ["科学家"] },
+        { "term": "protoscience", "root": "sci", "pos": "n.", "defs": ["原科学，前科学"] },
+        { "term": "company", "root": "company", "pos": "n.", "defs": ["公司；陪同；剧团；大队"] },
+        { "term": "accompany", "root": "company", "pos": "v.", "defs": ["陪同，陪伴；伴随；为…伴奏"] },
+        { "term": "companion", "root": "company", "pos": "n.", "defs": ["同伴；同事"] },
+        { "term": "federal", "root": "federal", "pos": "adj.", "defs": ["联邦的；联邦制的"] },
+        { "term": "federation", "root": "federal", "pos": "n.", "defs": ["联邦；联盟；联合会"] },
+        { "term": "system", "root": "system", "pos": "n.", "defs": ["系统；体系，制度，体制"] },
+        { "term": "systematic", "root": "system", "pos": "adj.", "defs": ["系统的；有条理的"] },
+        { "term": "systematically", "root": "system", "pos": "adv.", "defs": ["系统地；有条理地"] },
+        { "term": "regime", "root": "system", "pos": "n.", "defs": ["政体，政权；管理制度；养生法"] },
+        { "term": "different", "root": "differ", "pos": "adj.", "defs": ["有差异的，不同的"] },
+        { "term": "differ", "root": "differ", "pos": "v.", "defs": ["不同，相异；有分歧"] },
+        { "term": "difference", "root": "differ", "pos": "n.", "defs": ["差别，差异；分歧"] }
+      ]
+    },
+    {
+      "day": 8,
+      "date": "2026-11-12",
+      "title": "Day 8 · example / found / pay / place",
+      "roots": [
+        { "id": "differ", "label": "differ", "gloss": "分开 → 不同" },
+        { "id": "example", "label": "exempl", "gloss": "拿出 → 例子" },
+        { "id": "found", "label": "found", "gloss": "底部 → 创立" },
+        { "id": "pay", "label": "pay", "gloss": "平息 → 支付" },
+        { "id": "place", "label": "place", "gloss": "宽街 → 位置" }
+      ],
+      "words": [
+        { "term": "differ", "root": "differ", "pos": "v.", "defs": ["不同，相异；有分歧"] },
+        { "term": "difference", "root": "differ", "pos": "n.", "defs": ["差别，差异；分歧"] },
+        { "term": "differentiate", "root": "differ", "pos": "v.", "defs": ["区分；使不同"] },
+        { "term": "indifferent", "root": "differ", "pos": "adj.", "defs": ["冷漠的，不关心的；不感兴趣的"] },
+        { "term": "indifference", "root": "differ", "pos": "n.", "defs": ["不关心"] },
+        { "term": "example", "root": "example", "pos": "n.", "defs": ["例子；榜样"] },
+        { "term": "exemplify", "root": "example", "pos": "v.", "defs": ["举例说明；是…的典范"] },
+        { "term": "instance", "root": "example", "pos": "n.", "defs": ["例子，实例"] },
+        { "term": "found", "root": "found", "pos": "v.", "defs": ["建造；创立"] },
+        { "term": "founder", "root": "found", "pos": "n.", "defs": ["创建人，奠基者"] },
+        { "term": "foundation", "root": "found", "pos": "n.", "defs": ["基础；基本原理；创建；地基；基金会"] },
+        { "term": "erect", "root": "found", "pos": "v. / adj.", "defs": ["v. 建造；竖立 adj. 直立的"] },
+        { "term": "pioneering", "root": "found", "pos": "adj.", "defs": ["开创性的，先驱的，探索性的"] },
+        { "term": "pay", "root": "pay", "pos": "v. / n.", "defs": ["v. 支付；值得 n. 工资"] },
+        { "term": "payment", "root": "pay", "pos": "n.", "defs": ["支付；款额"] },
+        { "term": "repay", "root": "pay", "pos": "v.", "defs": ["偿还；报答"] },
+        { "term": "install(l)ment", "root": "pay", "pos": "n.", "defs": ["分期付款，分期交付；（分期连载的）部分"] },
+        { "term": "place", "root": "place", "pos": "n. / v.", "defs": ["n. 地点；名次；地位 v. 放置"] },
+        { "term": "in place", "root": "place", "pos": "", "defs": ["在正确位置；准备妥当"] }
+      ]
+    },
+    {
+      "day": 9,
+      "date": "2026-11-13",
+      "title": "Day 9 · believe / influence / data / observe",
+      "roots": [
+        { "id": "place", "label": "place", "gloss": "位置 → 替换" },
+        { "id": "believe", "label": "believe", "gloss": "信任" },
+        { "id": "credit", "label": "cred", "gloss": "相信" },
+        { "id": "faith", "label": "fid", "gloss": "信任" },
+        { "id": "influence", "label": "flu", "gloss": "流 → 影响" },
+        { "id": "data", "label": "data", "gloss": "给出 → 数据" },
+        { "id": "observe", "label": "serv", "gloss": "看守 → 观察 / 服务" }
+      ],
+      "words": [
+        { "term": "in place of", "root": "place", "pos": "", "defs": ["代替"] },
+        { "term": "replace", "root": "place", "pos": "v.", "defs": ["代替；放回；归还"] },
+        { "term": "replacement", "root": "place", "pos": "n.", "defs": ["替换；替代品；替代者"] },
+        { "term": "displace", "root": "place", "pos": "v.", "defs": ["移动…的位置；迫使…离开家园；取代"] },
+        { "term": "believe", "root": "believe", "pos": "v.", "defs": ["相信；认为"] },
+        { "term": "belief", "root": "believe", "pos": "n.", "defs": ["信仰，信念；相信"] },
+        { "term": "unbelievable", "root": "believe", "pos": "adj.", "defs": ["令人难以置信的"] },
+        { "term": "credit", "root": "credit", "pos": "n. / v.", "defs": ["n. 信用；信贷；荣誉；学分 v. 相信，信任"] },
+        { "term": "faith", "root": "faith", "pos": "n.", "defs": ["信任；相信"] },
+        { "term": "faithful", "root": "faith", "pos": "adj.", "defs": ["忠诚的，可信任的"] },
+        { "term": "influence", "root": "influence", "pos": "n. / v.", "defs": ["n. 影响；影响力 v. 影响；支配"] },
+        { "term": "influential", "root": "influence", "pos": "adj.", "defs": ["有影响力的；有权势的"] },
+        { "term": "data", "root": "data", "pos": "n.", "defs": ["数据；资料"] },
+        { "term": "database", "root": "data", "pos": "n.", "defs": ["数据库"] },
+        { "term": "observe", "root": "observe", "pos": "v.", "defs": ["遵守，奉行；观察；注意到；评论"] },
+        { "term": "observation", "root": "observe", "pos": "n.", "defs": ["观察；观测；观察资料；言论"] },
+        { "term": "observer", "root": "observe", "pos": "n.", "defs": ["遵守者；观察者"] },
+        { "term": "observable", "root": "observe", "pos": "adj.", "defs": ["能察觉到的，看得见的"] },
+        { "term": "serve", "root": "observe", "pos": "v.", "defs": ["服务，接待；能满足…的需要；服役"] }
+      ]
+    },
+    {
+      "day": 10,
+      "date": "2026-11-14",
+      "title": "Day 10 · form / firm",
+      "roots": [
+        { "id": "form", "label": "form", "gloss": "形状" },
+        { "id": "formid", "label": "formid", "gloss": "恐惧（形近 form，但不同源）" },
+        { "id": "firm", "label": "firm", "gloss": "坚固" },
+        { "id": "previous", "label": "previous", "gloss": "前路 → 以前" }
+      ],
+      "words": [
+        { "term": "format", "root": "form", "pos": "n. / v.", "defs": ["n. 设计；版式 v. 格式化"] },
+        { "term": "formula", "root": "form", "pos": "n.", "defs": ["公式，方程式；准则，方案"] },
+        { "term": "formulate", "root": "form", "pos": "v.", "defs": ["构想出，规划；系统地阐述"] },
+        { "term": "formulation", "root": "form", "pos": "n.", "defs": ["规划；构想"] },
+        { "term": "formidable", "root": "formid", "pos": "adj.", "defs": ["可怕的；令人敬畏的；难以应付的"] },
+        { "term": "perform", "root": "form", "pos": "v.", "defs": ["履行；做；表演；表现"] },
+        { "term": "performance", "root": "form", "pos": "n.", "defs": ["履行；表演；性能；业绩"] },
+        { "term": "performative", "root": "form", "pos": "adj.", "defs": ["表述行为的"] },
+        { "term": "reform", "root": "form", "pos": "n. / v.", "defs": ["改革；改造，改良"] },
+        { "term": "uniform", "root": "form", "pos": "n. / adj.", "defs": ["n. 制服 adj. 相同的，一律的"] },
+        { "term": "uniformity", "root": "form", "pos": "n.", "defs": ["一致，统一；一致性"] },
+        { "term": "conform", "root": "form", "pos": "v.", "defs": ["适应，顺从；遵守；相符合"] },
+        { "term": "conformity", "root": "form", "pos": "n.", "defs": ["一致，符合；顺从"] },
+        { "term": "previous", "root": "previous", "pos": "adj.", "defs": ["以前的，先前的"] },
+        { "term": "previously", "root": "previous", "pos": "adv.", "defs": ["先前，以前"] },
+        { "term": "firm", "root": "firm", "pos": "adj. / n.", "defs": ["adj. 坚固的；坚定的 n. 公司"] },
+        { "term": "infirm", "root": "firm", "pos": "adj.", "defs": ["体弱的"] },
+        { "term": "confirm", "root": "firm", "pos": "v.", "defs": ["证实；批准；使确信"] },
+        { "term": "confirmation", "root": "firm", "pos": "n.", "defs": ["证实，证明"] },
+        { "term": "affirm", "root": "firm", "pos": "v.", "defs": ["公开肯定；证实"] }
+      ]
+    },
+    {
+      "day": 11,
+      "date": "2026-11-15",
+      "title": "Day 11 · interest / product / effect",
+      "roots": [
+        { "id": "interest", "label": "interest", "gloss": "存在于其中 → 兴趣 / 利益" },
+        { "id": "duc", "label": "duc", "gloss": "引导 → 产出" },
+        { "id": "fac", "label": "fac", "gloss": "做 → 效果" },
+        { "id": "affirm", "label": "affirm", "gloss": "再确认" }
+      ],
+      "words": [
+        { "term": "reaffirm", "root": "affirm", "pos": "v.", "defs": ["重申，再次确定"] },
+        { "term": "interest", "root": "interest", "pos": "n. / v.", "defs": ["n. 兴趣；利益；利息 v. 使…感兴趣"] },
+        { "term": "interested", "root": "interest", "pos": "adj.", "defs": ["感兴趣的，关心的"] },
+        { "term": "interesting", "root": "interest", "pos": "adj.", "defs": ["有趣的；引起兴趣的"] },
+        { "term": "product", "root": "duc", "pos": "n.", "defs": ["产品；产物；（乘）积"] },
+        { "term": "produce", "root": "duc", "pos": "v. / n.", "defs": ["v. 生产；制作；产生 n. 产品；农产品"] },
+        { "term": "production", "root": "duc", "pos": "n.", "defs": ["生产；产量；产生；上演"] },
+        { "term": "productive", "root": "duc", "pos": "adj.", "defs": ["生产的；多产的；富有成效的"] },
+        { "term": "productivity", "root": "duc", "pos": "n.", "defs": ["生产率；生产力"] },
+        { "term": "reproduce", "root": "duc", "pos": "v.", "defs": ["生殖，繁殖；翻版；复制"] },
+        { "term": "by-product", "root": "duc", "pos": "n.", "defs": ["副产品；附带产生的后果"] },
+        { "term": "effect", "root": "fac", "pos": "n. / v.", "defs": ["n. 影响；结果；效果 v. 产生，造成"] },
+        { "term": "effective", "root": "fac", "pos": "adj.", "defs": ["有效的；生效的"] },
+        { "term": "effectively", "root": "fac", "pos": "adv.", "defs": ["有效地"] },
+        { "term": "effectiveness", "root": "fac", "pos": "n.", "defs": ["效力"] },
+        { "term": "ineffective", "root": "fac", "pos": "adj.", "defs": ["不起作用的，无效果的"] },
+        { "term": "ineffectiveness", "root": "fac", "pos": "n.", "defs": ["无效果"] },
+        { "term": "ineffectual", "root": "fac", "pos": "adj.", "defs": ["无效果的；（指人）无能的"] }
+      ]
+    }
+  ]
+}
