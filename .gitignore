@@ -1,4 +1,4 @@
-# Python
+﻿# Python
 __pycache__/
 *.py[cod]
 .pytest_cache/
@@ -35,3 +35,8 @@ coverage/
 # OS
 Thumbs.db
 .DS_Store
+
+# TypeScript build info
+*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts

@@ -1,1 +1,0 @@
-{"root":["./src/main.tsx","./src/types.ts","./src/app/app.tsx","./src/app/queryclient.ts","./src/components/layout.tsx","./src/pages/dashboard.tsx","./src/pages/dictionary.tsx","./src/pages/graph.tsx","./src/pages/imports.tsx","./src/pages/study.tsx","./src/services/api.ts"],"version":"5.9.3"}
