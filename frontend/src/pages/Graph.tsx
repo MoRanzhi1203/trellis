@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import cytoscape from 'cytoscape'
 import { api } from '../services/api'
@@ -9,12 +9,46 @@ const PALETTE = ['#2f6b4f', '#2d5f8a', '#9a6b12', '#7a4f8a', '#a04638', '#3f7a7a
 const LAYOUT = {
   name: 'cose',
   animate: false,
-  padding: 50,
-  nodeRepulsion: 9000,
-  idealEdgeLength: 90,
-  gravity: 0.6,
-  numIter: 900,
+  padding: 60,
+  nodeRepulsion: 12000,
+  idealEdgeLength: 95,
+  nodeOverlap: 30,
+  gravity: 0.55,
+  numIter: 1200,
+  componentSpacing: 140,
+  randomize: false,
 } as const
+
+/** Push overlapping nodes apart after the layout settles. */
+function spreadNodes(cy: cytoscape.Core, minDistance = 34) {
+  const nodes = cy.nodes().toArray()
+  for (let iter = 0; iter < 40; iter++) {
+    let moved = false
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const a = nodes[i]
+        const b = nodes[j]
+        const pa = a.position()
+        const pb = b.position()
+        let dx = pb.x - pa.x
+        let dy = pb.y - pa.y
+        let distance = Math.hypot(dx, dy)
+        if (distance < 0.001) {
+          dx = 0.6
+          dy = 0.6
+          distance = 0.85
+        }
+        if (distance < minDistance) {
+          const push = ((minDistance - distance) / distance) * 0.5
+          a.position({ x: pa.x - dx * push, y: pa.y - dy * push })
+          b.position({ x: pb.x + dx * push, y: pb.y + dy * push })
+          moved = true
+        }
+      }
+    }
+    if (!moved) break
+  }
+}
 
 function colorFor(node: GraphNode, index: number) {
   const meta = node.meta as { fam?: string }
@@ -78,11 +112,7 @@ export default function Graph() {
   const fit = useCallback(() => {
     const cy = cyRef.current
     if (!cy) return
-    cy.fit(undefined, 40)
-    if (cy.zoom() < 0.35) {
-      cy.zoom({ level: 0.35, renderedPosition: { x: cy.width() / 2, y: cy.height() / 2 } })
-      cy.center()
-    }
+    cy.fit(undefined, 36)
   }, [])
 
   const zoomBy = useCallback((factor: number) => {
@@ -153,6 +183,7 @@ export default function Graph() {
         boxSelectionEnabled: false,
         autounselectify: false,
         userPanningEnabled: true,
+        userZoomingEnabled: false,
       })
       cyRef.current.on('tap', 'node', (event) => {
         const node = view.data?.nodes.find((item) => String(item.id) === event.target.id())
@@ -167,8 +198,12 @@ export default function Graph() {
     const cy = cyRef.current
     cy.elements().remove()
     cy.add(elements)
-    cy.layout(LAYOUT).run()
-    window.setTimeout(() => fit(), 60)
+    const layout = cy.layout(LAYOUT)
+    layout.on('layoutstop', () => {
+      spreadNodes(cy, 40)
+      fit()
+    })
+    layout.run()
   }, [elements, view.data, fit])
 
   useEffect(() => {
@@ -179,6 +214,23 @@ export default function Graph() {
       .selector('edge').style({ 'line-color': dark ? '#33443f' : '#c3cfc6' })
       .update()
   }, [dark])
+
+  useEffect(() => {
+    const element = container.current
+    if (!element) return
+    const onWheel = (event: WheelEvent) => {
+      const cy = cyRef.current
+      if (!cy) return
+      event.preventDefault()
+      const rect = element.getBoundingClientRect()
+      const position = { x: event.clientX - rect.left, y: event.clientY - rect.top }
+      const factor = Math.exp(-event.deltaY * 0.0036)
+      const level = Math.min(3.5, Math.max(0.15, cy.zoom() * factor))
+      cy.zoom({ level, renderedPosition: position })
+    }
+    element.addEventListener('wheel', onWheel, { passive: false })
+    return () => element.removeEventListener('wheel', onWheel)
+  }, [])
 
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
