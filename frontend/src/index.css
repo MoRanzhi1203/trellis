@@ -140,3 +140,6 @@ tr:hover td { background: #f6f9f5; }
 .graph-tools button:hover { background: #fff; }
 .dark .graph-tools button { background: #1d272c; color: #dfe9e4; border-color: #2b3a40; }
 .dark .graph-tools button:hover { background: #24323a; }
+.graph-detail .ipa { color: var(--muted); font-family: ui-monospace, Consolas, monospace; font-size: 12px; }
+.graph-detail .sense { margin: 4px 0; font-size: 13px; }
+.graph-detail .pos { font-style: italic; color: var(--muted); margin-right: 6px; }
