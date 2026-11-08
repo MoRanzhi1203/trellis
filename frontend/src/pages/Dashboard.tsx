@@ -45,6 +45,11 @@ export default function Dashboard() {
               <div className="value">{data.streak_days} 天</div>
               <div className="hint">以复习记录计算</div>
             </div>
+            <div className="card">
+              <div className="label">已学单词</div>
+              <div className="value">{data.learned_lexemes}</div>
+              <div className="hint">已掌握 {data.mastered_lexemes} · 学习中 {data.learning_lexemes}</div>
+            </div>
           </div>
 
           <div className="panel">

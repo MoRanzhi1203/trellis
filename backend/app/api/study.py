@@ -74,6 +74,34 @@ def unit_cards(unit_id: int, db: Session = Depends(get_db)):
     return {"unit": unit.title, "items": items}
 
 
+@router.get("/reviews/weak")
+def weak(limit: int = 30, db: Session = Depends(get_db)):
+    """Recognition cards with a history of lapses, for focused review."""
+    rows = db.execute(
+        select(MemoryCard, ReviewState, Lexeme)
+        .join(ReviewState, ReviewState.card_id == MemoryCard.id)
+        .join(Lexeme, Lexeme.id == MemoryCard.lexeme_id)
+        .where(
+            ReviewState.lapses > 0,
+            MemoryCard.enabled.is_(True),
+            MemoryCard.direction == "EN_TO_ZH",
+        )
+        .order_by(ReviewState.lapses.desc())
+        .limit(limit)
+    ).all()
+    return [
+        {
+            "card_id": card.id,
+            "headword": lexeme.headword,
+            "card_type": card.card_type,
+            "lapses": state.lapses,
+            "reps": state.reps,
+            "due_at": state.due_at,
+        }
+        for card, state, lexeme in rows
+    ]
+
+
 @router.post("/reviews/submit")
 def submit(payload: ReviewSubmit, db: Session = Depends(get_db)):
     try:

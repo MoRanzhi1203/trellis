@@ -22,9 +22,20 @@ def overview(db: Session, now: datetime | None = None) -> dict:
     start = today_start(current)
 
     total_lexemes = db.scalar(select(func.count()).select_from(Lexeme).where(Lexeme.status == "active")) or 0
-    total_cards = db.scalar(select(func.count()).select_from(MemoryCard)) or 0
+    total_cards = db.scalar(
+        select(func.count())
+        .select_from(MemoryCard)
+        .where(MemoryCard.enabled.is_(True), MemoryCard.direction == "EN_TO_ZH")
+    ) or 0
     due_today = db.scalar(
-        select(func.count()).select_from(ReviewState).where(ReviewState.due_at <= current)
+        select(func.count())
+        .select_from(ReviewState)
+        .join(MemoryCard, MemoryCard.id == ReviewState.card_id)
+        .where(
+            ReviewState.due_at <= current,
+            MemoryCard.enabled.is_(True),
+            MemoryCard.direction == "EN_TO_ZH",
+        )
     ) or 0
     learned_today = db.scalar(
         select(func.count())
@@ -61,6 +72,28 @@ def overview(db: Session, now: datetime | None = None) -> dict:
         .limit(5)
     ).all()
 
+    learned_lexemes = db.scalar(
+        select(func.count(func.distinct(MemoryCard.lexeme_id)))
+        .select_from(MemoryCard)
+        .join(ReviewState, ReviewState.card_id == MemoryCard.id)
+        .where(
+            MemoryCard.enabled.is_(True),
+            MemoryCard.direction == "EN_TO_ZH",
+            ReviewState.reps > 0,
+        )
+    ) or 0
+    mastered_lexemes = db.scalar(
+        select(func.count(func.distinct(MemoryCard.lexeme_id)))
+        .select_from(MemoryCard)
+        .join(ReviewState, ReviewState.card_id == MemoryCard.id)
+        .where(
+            MemoryCard.enabled.is_(True),
+            MemoryCard.direction == "EN_TO_ZH",
+            ReviewState.reps >= 3,
+            ReviewState.lapses <= 1,
+        )
+    ) or 0
+
     return {
         "total_lexemes": total_lexemes,
         "total_cards": total_cards,
@@ -69,5 +102,8 @@ def overview(db: Session, now: datetime | None = None) -> dict:
         "reviewed_today": reviewed_today,
         "accuracy_today": accuracy,
         "streak_days": streak,
+        "learned_lexemes": learned_lexemes,
+        "mastered_lexemes": mastered_lexemes,
+        "learning_lexemes": max(learned_lexemes - mastered_lexemes, 0),
         "weak_words": [{"headword": row[0], "misses": row[1]} for row in weak_rows],
     }

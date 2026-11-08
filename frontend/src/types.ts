@@ -91,6 +91,9 @@ export interface Stats {
   reviewed_today: number
   accuracy_today: number
   streak_days: number
+  learned_lexemes: number
+  mastered_lexemes: number
+  learning_lexemes: number
   weak_words: { headword: string; misses: number }[]
 }
 
