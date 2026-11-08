@@ -7,7 +7,16 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.models import MemoryCard, ReviewLog, StudyPlan, StudySession
+from app.models import (
+    Lexeme,
+    MemoryCard,
+    ReviewLog,
+    ReviewState,
+    StudyPlan,
+    StudySession,
+    Unit,
+    UnitWord,
+)
 from app.schemas.learning import PlanCreate, ReviewSubmit, StudySessionCreate
 from app.services import reviews as review_service
 from app.services import stats as stats_service
@@ -18,6 +27,51 @@ router = APIRouter(prefix="/api", tags=["study"])
 @router.get("/reviews/due")
 def due(limit: int = 200, db: Session = Depends(get_db)):
     return review_service.due_cards(db, limit=limit)
+
+
+@router.get("/study/cards")
+def unit_cards(unit_id: int, db: Session = Depends(get_db)):
+    """Ordered recognition cards for one unit (English prompt -> Chinese answer)."""
+    from app.services.reviews import ensure_cards_for_lexeme
+
+    unit = db.get(Unit, unit_id)
+    if not unit:
+        raise HTTPException(status_code=404, detail="unit not found")
+    rows = db.execute(
+        select(UnitWord.lexeme_id, UnitWord.order_no)
+        .where(UnitWord.unit_id == unit_id)
+        .order_by(UnitWord.order_no)
+    ).all()
+    items = []
+    for lexeme_id, order_no in rows:
+        lexeme = db.get(Lexeme, lexeme_id)
+        if not lexeme:
+            continue
+        ensure_cards_for_lexeme(db, lexeme)
+        card = db.scalar(
+            select(MemoryCard).where(
+                MemoryCard.lexeme_id == lexeme_id, MemoryCard.card_type == "en_to_zh"
+            )
+        )
+        state = (
+            db.scalar(select(ReviewState).where(ReviewState.card_id == card.id))
+            if card
+            else None
+        )
+        items.append(
+            {
+                "lexeme_id": lexeme_id,
+                "order_no": order_no,
+                "headword": lexeme.headword,
+                "card_id": card.id if card else None,
+                "answer": card.answer if card else "",
+                "due_at": state.due_at if state else None,
+                "reps": state.reps if state else 0,
+                "mode": state.mode if state else "fsrs",
+            }
+        )
+    db.commit()
+    return {"unit": unit.title, "items": items}
 
 
 @router.post("/reviews/submit")

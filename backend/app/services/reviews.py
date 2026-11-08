@@ -9,7 +9,8 @@ from sqlalchemy.orm import Session
 from app.models import Lexeme, MemoryCard, ReviewLog, ReviewState, StudyEvent, StudySession
 from app.review.fsrs import ReviewStateData, schedule
 
-CARD_TYPES = ("en_to_zh", "zh_to_en", "spelling", "derivation", "collocation")
+CARD_TYPES = ("en_to_zh",)
+CARD_DIRECTION = "EN_TO_ZH"
 
 
 def utcnow() -> datetime:
@@ -17,20 +18,22 @@ def utcnow() -> datetime:
 
 
 def build_card_payload(lexeme: Lexeme) -> dict[str, tuple[str, str]]:
-    first = lexeme.senses[0] if lexeme.senses else None
-    definition = first.definition_zh if first else ""
-    pos = first.pos if first else ""
-    headword = lexeme.headword
-    cards: dict[str, tuple[str, str]] = {
-        "en_to_zh": (headword, definition),
-        "zh_to_en": (definition or headword, headword),
-        "spelling": (definition or headword, headword),
-    }
-    if lexeme.headword and len(lexeme.headword) > 3:
-        cards["derivation"] = (f"{headword} 的构词拆解？", lexeme.etymologies[0].description_zh if lexeme.etymologies else "")
-    if first and first.collocations:
-        cards["collocation"] = (f"{headword} 的常见搭配？", first.collocations[0].pattern)
-    return cards
+    """Only one card direction is allowed: English prompt -> Chinese answer."""
+    lines: list[str] = []
+    collocations: list[str] = []
+    for sense in lexeme.senses:
+        text = sense.definition_zh.strip()
+        if not text:
+            continue
+        pos = sense.pos.strip()
+        lines.append(f"{pos} {text}".strip())
+        for coll in sense.collocations:
+            if coll.pattern:
+                collocations.append(coll.pattern)
+    answer = "\n".join(lines)
+    if collocations:
+        answer += "\n\n常见搭配：\n" + "\n".join(collocations[:6])
+    return {"en_to_zh": (lexeme.headword, answer)}
 
 
 def ensure_cards_for_lexeme(db: Session, lexeme: Lexeme, mode: str = "fsrs") -> int:
@@ -47,6 +50,8 @@ def ensure_cards_for_lexeme(db: Session, lexeme: Lexeme, mode: str = "fsrs") -> 
             card = MemoryCard(
                 lexeme_id=lexeme.id,
                 card_type=card_type,
+                direction="EN_TO_ZH",
+                enabled=True,
                 prompt=prompt,
                 answer=answer,
             )
@@ -88,7 +93,12 @@ def due_cards(db: Session, now: datetime | None = None, limit: int = 200) -> lis
         select(MemoryCard, ReviewState, Lexeme)
         .join(ReviewState, ReviewState.card_id == MemoryCard.id)
         .join(Lexeme, Lexeme.id == MemoryCard.lexeme_id)
-        .where(ReviewState.due_at <= now)
+        .where(
+            ReviewState.due_at <= now,
+            MemoryCard.card_type == "en_to_zh",
+            MemoryCard.direction == "EN_TO_ZH",
+            MemoryCard.enabled.is_(True),
+        )
         .order_by(ReviewState.due_at)
         .limit(limit)
     ).all()

@@ -3,7 +3,8 @@ import { NavLink, Outlet } from 'react-router-dom'
 const nav = [
   { to: '/', label: '首页', end: true },
   { to: '/dictionary', label: '词库' },
-  { to: '/study', label: '学习与复习' },
+  { to: '/study', label: '识别学习' },
+  { to: '/test', label: '识别测试' },
   { to: '/graph', label: '知识图谱' },
   { to: '/imports', label: '导入与备份' },
 ]

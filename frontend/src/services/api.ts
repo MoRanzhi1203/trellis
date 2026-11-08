@@ -5,6 +5,7 @@ import type {
   Lexeme,
   Page,
   Stats,
+  StudyCard,
   Unit,
 } from '../types'
 
@@ -62,6 +63,10 @@ export const api = {
     due: () => request<DueCard[]>('/reviews/due'),
     submit: (payload: unknown) => request<unknown>('/reviews/submit', { method: 'POST', body: JSON.stringify(payload) }),
     history: () => request<unknown[]>('/reviews/history'),
+  },
+  study: {
+    cards: (unitId: number) =>
+      request<{ unit: string; items: StudyCard[] }>(`/study/cards?unit_id=${unitId}`),
   },
   stats: () => request<Stats>('/statistics/overview'),
   imports: {

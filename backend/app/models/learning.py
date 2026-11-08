@@ -172,6 +172,8 @@ class MemoryCard(Base):
         ForeignKey("lexemes.id", ondelete="CASCADE"), nullable=False, index=True
     )
     card_type: Mapped[str] = mapped_column(String(24), nullable=False)
+    direction: Mapped[str] = mapped_column(String(16), nullable=False, default="EN_TO_ZH")
+    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     prompt: Mapped[str] = mapped_column(Text, nullable=False, default="")
     answer: Mapped[str] = mapped_column(Text, nullable=False, default="")
     created_at: Mapped[datetime] = mapped_column(

@@ -94,6 +94,17 @@ export interface Stats {
   weak_words: { headword: string; misses: number }[]
 }
 
+export interface StudyCard {
+  lexeme_id: number
+  order_no: number
+  headword: string
+  card_id: number | null
+  answer: string
+  due_at: string | null
+  reps: number
+  mode: string
+}
+
 export interface Book {
   id: number
   title: string
